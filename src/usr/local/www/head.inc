@@ -51,12 +51,54 @@ if (!isset($config['system']['webgui']['dashboardcolumns'])) {
 	$config['system']['webgui']['dashboardcolumns'] = 2;
 }
 
+// Initialize authentication variables with defaults
+$authmode = isset($_SESSION['authmode']) ? $_SESSION['authmode'] : '';
+$user_settings = isset($config['system']['webgui']) ? $config['system']['webgui'] : array();
+$user_lang = isset($user_settings['language']) ? $user_settings['language'] : 'en_US';
+
+if (!function_exists('display_error_modal')) {
+    function display_error_modal($title, $message) {
+        echo '<div class="modal fade" id="errorModal" tabindex="-1" role="dialog">';
+        echo '<div class="modal-dialog" role="document">';
+        echo '<div class="modal-content">';
+        echo '<div class="modal-header">';
+        echo '<h4 class="modal-title">' . htmlspecialchars($title) . '</h4>';
+        echo '</div>';
+        echo '<div class="modal-body">';
+        echo '<p>' . htmlspecialchars($message) . '</p>';
+        echo '</div>';
+        echo '<div class="modal-footer">';
+        echo '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+    }
+}
+
+// Check for required session variables
+if (!isset($_SESSION['Username'])) {
+    $_SESSION['Username'] = '';
+}
+
+// Initialize page variables
+$pgtitle = isset($pgtitle) ? $pgtitle : array();
+$pglinks = isset($pglinks) ? $pglinks : array();
+$shortcut_section = isset($shortcut_section) ? $shortcut_section : '';
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
+	<!-- Logo and favicon references -->
+	<link rel="icon" href="/logo.svg" type="image/svg+xml">
+	<link rel="apple-touch-icon-precomposed" sizes="144x144" href="/logo.svg">
+	<link rel="apple-touch-icon-precomposed" sizes="114x114" href="/logo.svg">
+	<link rel="apple-touch-icon-precomposed" sizes="72x72" href="/logo.svg">
+	<link rel="apple-touch-icon-precomposed" href="/logo.svg">
+	
 	<link rel="apple-touch-icon-precomposed" href="/apple-touch/apple-touch-icon-iphone-60x60-precomposed.png">
 	<link rel="apple-touch-icon-precomposed" sizes="60x60" href="/apple-touch/apple-touch-icon-ipad-76x76-precomposed.png">
 	<link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch/apple-touch-icon-iphone-retina-120x120-precomposed.png">
@@ -72,6 +114,12 @@ if (!isset($config['system']['webgui']['dashboardcolumns'])) {
 	<link rel="stylesheet" href="/vendor/sortable/sortable-theme-bootstrap.css?v=<?=filemtime('/usr/local/www/vendor/sortable/sortable-theme-bootstrap.css')?>">
 	<link rel="stylesheet" href="/vendor/jquery-treegrid/css/jquery.treegrid.css?v=<?=filemtime('/usr/local/www/vendor/jquery-treegrid/css/jquery.treegrid.css')?>">
 	<link rel="stylesheet" href="<?=$cssfile?>?v=<?=filemtime('/usr/local/www/' . $cssfile)?>" />
+	<link rel="stylesheet" href="/css/custom-theme.css?v=<?=filemtime('/usr/local/www/css/custom-theme.css')?>" />
+	<link href="/vendor/bootstrap/css/bootstrap.min.css?v=<?=filemtime('/usr/local/www/vendor/bootstrap/css/bootstrap.min.css')?>" rel="stylesheet">
+	<link href="/vendor/jquery-ui/jquery-ui-1.12.1.min.css?v=<?=filemtime('/usr/local/www/vendor/jquery-ui/jquery-ui-1.12.1.min.css')?>" rel="stylesheet">
+	<link href="/css/pfSense.css?v=<?=filemtime('/usr/local/www/css/pfSense.css')?>" rel="stylesheet">
+	<link href="/vendor/select2/css/select2.min.css?v=<?=filemtime('/usr/local/www/vendor/select2/css/select2.min.css')?>" rel="stylesheet">
+	<link href="/vendor/select2-bootstrap-theme/select2-bootstrap.min.css?v=<?=filemtime('/usr/local/www/vendor/select2-bootstrap-theme/select2-bootstrap.min.css')?>" rel="stylesheet">
 
 	<title><?=$tabtitle?></title>
 	<script type="text/javascript">
@@ -79,6 +127,12 @@ if (!isset($config['system']['webgui']['dashboardcolumns'])) {
 	var events = events || [];
 	//]]>
 	</script>
+	<style>
+		.navbar-brand img {
+			height: 40px;
+			width: auto;
+		}
+	</style>
 </head>
 
 <?php
@@ -205,11 +259,10 @@ function output_menu($arrayitem, $target = null, $section = "") {
 	$output = "";
 
 	foreach ($arrayitem as $item) {
-
-		/* If the user has access to help pages, also show the full help menu. See #5909 */
 		if (isAllowedPage($item[1]) || $item[1] == "/index.php?logout" ||
-		    (($section == "Help") && isAllowedPage("help.php")) ||
-		    (substr($item[1], 0, 8) == "https://")) {
+			(($section == "Help") && isAllowedPage("help.php")) ||
+			(substr($item[1], 0, 8) == "https://")) {
+			
 			$attr = sprintf("href=\"%s\"", htmlentities($item[1]));
 
 			if ($target) {
@@ -228,11 +281,11 @@ function output_menu($arrayitem, $target = null, $section = "") {
 				$attr .= sprintf(" style=\"%s\"", htmlentities($item['style']));
 			}
 
-
 			if ($item[0] == '-DIVIDER-') {
 				$output .= ' <li class="divider"></li>';
 			} else {
-				$output .= "<li>". sprintf("<a %s %s>%s</a>", $attr, ($item[1] == "/index.php?logout") ? "usepost":"",$item[0]) . "</li>\n";
+				$icon = isset($item[2]) ? "<i class=\"fa {$item[2]}\"></i> " : "";
+				$output .= "<li>". sprintf("<a %s %s>%s%s</a>", $attr, ($item[1] == "/index.php?logout") ? "usepost":"", $icon, $item[0]) . "</li>\n";
 			}
 		}
 	}
@@ -244,63 +297,56 @@ $ext_menu_path_data = read_ext_menu_path_data();
 
 // System
 $system_menu = array();
-$system_menu[] = array(gettext("Advanced"), "/system_advanced_admin.php");
-$system_menu[] = array(gettext("Update"), "/pkg_mgr_install.php?id=firmware");
-$system_menu[] = array(gettext("General Setup"), "/system.php");
-$system_menu[] = array(gettext("High Availability"), "/system_hasync.php");
-$system_menu[] = array(gettext("Package Manager"), "/pkg_mgr_installed.php");
-$system_menu[] = array(gettext("Setup Wizard"), "/wizard.php?xml=setup_wizard.xml");
-$system_menu[] = array(gettext("Routing"), "/system_gateways.php");
+$system_menu[] = array(gettext("General Setup"), "/system.php", "fa-cog");
+$system_menu[] = array(gettext("Advanced"), "/system_advanced_admin.php", "fa-sliders-h");
+$system_menu[] = array(gettext("High Availability"), "/system_hasync.php", "fa-server");
+$system_menu[] = array(gettext("Setup Wizard"), "/wizard.php?xml=setup_wizard.xml", "fa-magic");
+$system_menu[] = array(gettext("Routing"), "/system_gateways.php", "fa-route");
 
 if (isAllowedPage("system_camanager.php")) {
-	$system_menu[] = array(gettext("Certificates"), "/system_camanager.php");
+	$system_menu[] = array(gettext("Certificates"), "/system_camanager.php", "fa-certificate");
 } elseif (isAllowedPage("system_certmanager.php")) {
-	$system_menu[] = array(gettext("Certificates"), "/system_certmanager.php");
+	$system_menu[] = array(gettext("Certificates"), "/system_certmanager.php", "fa-certificate");
 } elseif (isAllowedPage("system_crlmanager.php")) {
-	$system_menu[] = array(gettext("Certificates"), "/system_crlmanager.php");
+	$system_menu[] = array(gettext("Certificates"), "/system_crlmanager.php", "fa-certificate");
 }
 
-$system_menu[] = array(gettext("Register"), "/system_register.php");
-
 if (!isAllowedPage("system_usermanager.php")) {
-	$system_menu[] = array(gettext("User Manager"), "/system_usermanager_passwordmg.php");
+	$system_menu[] = array(gettext("User Manager"), "/system_usermanager_passwordmg.php", "fa-users");
 } else {
-	$system_menu[] = array(gettext("User Manager"), "/system_usermanager.php");
+	$system_menu[] = array(gettext("User Manager"), "/system_usermanager.php", "fa-users");
 }
 
 if ($user_settings['customsettings'] && isAllowedPage("system_user_settings.php")) {
-	$system_menu[] = array(gettext("User Settings"), "/system_user_settings.php");
+	$system_menu[] = array(gettext("User Settings"), "/system_user_settings.php", "fa-user-cog");
 }
 
 $system_menu = msort(array_merge($system_menu, return_ext_menu("System")), 0);
 
 /* ensure Logout is the last item in the menu */
-$system_menu[] = array(gettext("Logout") . " (" . $_SESSION['Username'] . ")", "/index.php?logout");
+$system_menu[] = array(gettext("Logout") . " (" . $_SESSION['Username'] . ")", "/index.php?logout", "fa-sign-out-alt");
 
 // Interfaces
-// NOTE:
-// Now that menus are sorted, adding a DIVIDER must be done after the sorting so an array is formed of the
-// items above the divider and another for below it. These are then sorted and combined with the divider
 $interfaces_menu = array();
 $interfaces_top = array();
 $interfaces_bottom = array();
 
 if (!isset($config['system']['webgui']['noassigninterfaces'])) {
-	$interfaces_top[] = array(gettext("Assignments"), "/interfaces_assign.php");
+	$interfaces_top[] = array(gettext("Assignments"), "/interfaces_assign.php", "fa-network-wired");
 	$div = true;
 }
 
 $platform = system_identify_specific_platform();
 
 if ($platform['name'] == "uFW") {
-	$interfaces_top[] = array(gettext("Switches"), "/switch_system.php");
+	$interfaces_top[] = array(gettext("Switches"), "/switch_system.php", "fa-switch");
 }
 
 $opts = get_configured_interface_with_descr(true);
 
 foreach ($opts as $oif => $odescr) {
 	if (!isset($config['interfaces'][$oif]['ovpn'])) {
-		$interfaces_bottom[] = array(htmlspecialchars($odescr), "/interfaces.php?if={$oif}");
+		$interfaces_bottom[] = array(htmlspecialchars($odescr), "/interfaces.php?if={$oif}", "fa-ethernet");
 	}
 }
 
@@ -315,124 +361,55 @@ $interfaces_menu = array_merge($interfaces_top, [array(0 => "-DIVIDER-")], $inte
 
 // Firewall
 $firewall_menu = array();
-$firewall_menu[] = array(gettext("Aliases"), "/firewall_aliases.php");
-$firewall_menu[] = array(gettext("NAT"), "/firewall_nat.php");
-$firewall_menu[] = array(gettext("Rules"), "/firewall_rules.php");
-$firewall_menu[] = array(gettext("Schedules"), "/firewall_schedule.php");
-$firewall_menu[] = array(gettext("Traffic Shaper"), "/firewall_shaper.php");
-$firewall_menu[] = array(gettext("Virtual IPs"), "/firewall_virtual_ip.php");
+$firewall_menu[] = array(gettext("Rules"), "/firewall_rules.php", "fa-shield-alt");
+$firewall_menu[] = array(gettext("NAT"), "/firewall_nat.php", "fa-random");
+$firewall_menu[] = array(gettext("Aliases"), "/firewall_aliases.php", "fa-tags");
+$firewall_menu[] = array(gettext("Schedules"), "/firewall_schedule.php", "fa-clock");
+$firewall_menu[] = array(gettext("Traffic Shaper"), "/firewall_shaper.php", "fa-tachometer");
+$firewall_menu[] = array(gettext("Virtual IPs"), "/firewall_virtual_ip.php", "fa-network-wired");
 $firewall_menu = msort(array_merge($firewall_menu, return_ext_menu("Firewall")), 0);
 
 // Services
 $services_menu = array();
-$services_menu[] = array(gettext("Auto Config Backup"), "/services_acb_settings.php");
-$services_menu[] = array(gettext("Captive Portal"), "/services_captiveportal.php");
-$services_menu[] = array(gettext("DNS Forwarder"), "/services_dnsmasq.php");
-$services_menu[] = array(gettext("DNS Resolver"), "/services_unbound.php");
-$services_menu[] = array(gettext("DHCP Relay"), "/services_dhcp_relay.php");
-$services_menu[] = array(gettext("DHCPv6 Relay"), "/services_dhcpv6_relay.php");
-
-if (g_get('services_dhcp_server_enable')) {
-	$services_menu[] = array(gettext("DHCP Server"), "/services_dhcp.php");
-	$services_menu[] = array(htmlspecialchars(gettext("DHCPv6 Server")), "/services_dhcpv6.php");
-}
-
-$services_menu[] = [gettext('Router Advertisement'), '/services_radvd.php'];
-
-$services_menu[] = array(gettext("Dynamic DNS"), "/services_dyndns.php");
-$services_menu[] = array(gettext("IGMP Proxy"), "/services_igmpproxy.php");
-$services_menu[] = array(gettext("NTP"), "/services_ntpd.php");
-$services_menu[] = array(gettext("PPPoE Server"), "/services_pppoe.php");
-$services_menu[] = array(gettext("SNMP"), "/services_snmp.php");
-
-if (count($config['interfaces']) > 1) {
-	/* no use for UPnP in single-interface deployments
-	remove to reduce user confusion
-	*/
-	$services_menu[] = array(gettext("UPnP &amp; NAT-PMP"), "/pkg_edit.php?xml=miniupnpd.xml");
-}
-
-$services_menu[] = array(gettext("Wake-on-LAN"), "/services_wol.php");
+$services_menu[] = array(gettext("DHCP Server"), "/services_dhcp.php", "fa-network-wired");
+$services_menu[] = array(gettext("DNS Forwarder"), "/services_dnsmasq.php", "fa-globe");
+$services_menu[] = array(gettext("DNS Resolver"), "/services_unbound.php", "fa-search");
+$services_menu[] = array(gettext("Content Filtering"), "/content_filter.php", "fa-shield-alt");
+$services_menu[] = array(gettext("Captive Portal"), "/services_captiveportal.php", "fa-door-open");
+$services_menu[] = array(gettext("NTP"), "/services_ntpd.php", "fa-clock");
+$services_menu[] = array(gettext("SNMP"), "/services_snmp.php", "fa-chart-line");
+$services_menu[] = array(gettext("Wake-on-LAN"), "/services_wol.php", "fa-power-off");
 $services_menu = msort(array_merge($services_menu, return_ext_menu("Services")), 0);
 
 // VPN
 $vpn_menu = array();
-$vpn_menu[] = array(gettext("IPsec"), "/vpn_ipsec.php");
-$vpn_menu[] = array(gettext("OpenVPN"), "/vpn_openvpn_server.php");
-//$vpn_menu[] = array(gettext("PPTP"), "/vpn_pptp.php");
-$vpn_menu[] = array(gettext("L2TP"), "/vpn_l2tp.php");
+$vpn_menu[] = array(gettext("IPsec"), "/vpn_ipsec.php", "fa-lock");
+$vpn_menu[] = array(gettext("OpenVPN"), "/vpn_openvpn_server.php", "fa-shield-alt");
+$vpn_menu[] = array(gettext("L2TP"), "/vpn_l2tp.php", "fa-network-wired");
 $vpn_menu = msort(array_merge($vpn_menu, return_ext_menu("VPN")), 0);
 
 // Status
 $status_menu = array();
-$status_menu[] = array(gettext("Captive Portal"), "/status_captiveportal.php");
-$status_menu[] = array(gettext("CARP (failover)"), "/status_carp.php");
-$status_menu[] = array(gettext("Dashboard"), "/index.php");
-$status_menu[] = array(gettext("Gateways"), "/status_gateways.php");
-$status_menu[] = array(gettext("DHCP Leases"), "/status_dhcp_leases.php");
-$status_menu[] = array(gettext("DHCPv6 Leases"), "/status_dhcpv6_leases.php");
-$status_menu[] = array(gettext("DNS Resolver"), "/status_unbound.php");
-$status_menu[] = array(gettext("Filter Reload"), "/status_filter_reload.php?user=true");
-$status_menu[] = array(gettext("Interfaces"), "/status_interfaces.php");
-$status_menu[] = array(gettext("IPsec"), "/status_ipsec.php");
-$status_menu[] = array(gettext("NTP"), "/status_ntpd.php");
-$status_menu[] = array(gettext("OpenVPN"), "/status_openvpn.php");
-$status_menu[] = array(gettext("Queues"), "/status_queues.php");
-$status_menu[] = array(gettext("Services"), "/status_services.php");
-$status_menu[] = array(gettext("System Logs"), "/status_logs.php");
-$status_menu[] = array(gettext("Traffic Graph"), "/status_graph.php");
-
-if (count($config['interfaces']) > 1) {
-	$status_menu[] = array(gettext("UPnP &amp; NAT-PMP"), "/status_upnp.php");
-}
-
-$wifdescrs = array();
-$ifentries = get_configured_interface_with_descr();
-foreach ($ifentries as $ent => $entdesc) {
-	if (is_array($config['interfaces'][$ent]['wireless']) &&
-	    preg_match(g_get('wireless_regex'), $config['interfaces'][$ent]['if'])) {
-		$wifdescrs[$ent] = $entdesc;
-	}
-}
-
-if (count($wifdescrs) > 0) {
-	$status_menu[] = array(gettext("Wireless"), "/status_wireless.php");
-}
-
+$status_menu[] = array(gettext("Interfaces"), "/status_interfaces.php", "fa-network-wired");
+$status_menu[] = array(gettext("Gateways"), "/status_gateways.php", "fa-route");
+$status_menu[] = array(gettext("Services"), "/status_services.php", "fa-cogs");
+$status_menu[] = array(gettext("System Logs"), "/status_logs.php", "fa-clipboard-list");
+$status_menu[] = array(gettext("Traffic Graph"), "/status_graph.php", "fa-chart-line");
+$status_menu[] = array(gettext("DHCP Leases"), "/status_dhcp_leases.php", "fa-network-wired");
+$status_menu[] = array(gettext("OpenVPN"), "/status_openvpn.php", "fa-shield-alt");
+$status_menu[] = array(gettext("IPsec"), "/status_ipsec.php", "fa-lock");
 $status_menu = msort(array_merge($status_menu, return_ext_menu("Status")), 0);
 
 // Diagnostics
 $diagnostics_menu = array();
-$diagnostics_menu[] = array(gettext("ARP Table"), "/diag_arp.php");
-$diagnostics_menu[] = array(gettext("Authentication"), "/diag_authentication.php");
-$diagnostics_menu[] = array(htmlspecialchars(gettext("Backup & Restore")), "/diag_backup.php");
-$diagnostics_menu[] = array(gettext("Command Prompt"), "/diag_command.php");
-$diagnostics_menu[] = array(gettext("DNS Lookup"), "/diag_dns.php");
-$diagnostics_menu[] = array(gettext("Edit File"), "/diag_edit.php");
-$diagnostics_menu[] = array(gettext("Factory Defaults"), "/diag_defaults.php");
-
-if (file_exists("/var/run/gmirror_active")) {
-	$diagnostics_menu[] = array(gettext("GEOM Mirrors"), "/diag_gmirror.php");
-}
-
-$diagnostics_menu[] = array(gettext("Halt System"), "/diag_halt.php");
-$diagnostics_menu[] = array(gettext("Limiter Info"), "/diag_limiter_info.php");
-$diagnostics_menu[] = array(gettext("NDP Table"), "/diag_ndp.php");
-$diagnostics_menu[] = array(gettext("Tables"), "/diag_tables.php");
-$diagnostics_menu[] = array(gettext("Ping"), "/diag_ping.php");
-$diagnostics_menu[] = array(gettext("Test Port"), "/diag_testport.php");
-$diagnostics_menu[] = array(gettext("pfInfo"), "/diag_pf_info.php");
-$diagnostics_menu[] = array(gettext("pfTop"), "/diag_pftop.php");
-$diagnostics_menu[] = array(gettext("Reboot"), "/diag_reboot.php");
-$diagnostics_menu[] = array(gettext("Routes"), "/diag_routes.php");
-$diagnostics_menu[] = array(gettext("S.M.A.R.T. Status"), "/diag_smart.php");
-$diagnostics_menu[] = array(gettext("Sockets"), "/diag_sockets.php");
-$diagnostics_menu[] = array(gettext("States"), "/diag_dump_states.php");
-$diagnostics_menu[] = array(gettext("States Summary"), "/diag_states_summary.php");
-$diagnostics_menu[] = array(gettext("System Activity"), "/diag_system_activity.php");
-$diagnostics_menu[] = array(gettext("Traceroute"), "/diag_traceroute.php");
-$diagnostics_menu[] = array(gettext("Packet Capture"), "/diag_packet_capture.php");
-
+$diagnostics_menu[] = array(gettext("System Activity"), "/diag_system_activity.php", "fa-chart-line");
+$diagnostics_menu[] = array(gettext("Command Prompt"), "/diag_command.php", "fa-terminal");
+$diagnostics_menu[] = array(gettext("Ping"), "/diag_ping.php", "fa-network-wired");
+$diagnostics_menu[] = array(gettext("Traceroute"), "/diag_traceroute.php", "fa-route");
+$diagnostics_menu[] = array(gettext("DNS Lookup"), "/diag_dns.php", "fa-search");
+$diagnostics_menu[] = array(gettext("Packet Capture"), "/diag_packet_capture.php", "fa-network-wired");
+$diagnostics_menu[] = array(gettext("ARP Table"), "/diag_arp.php", "fa-table");
+$diagnostics_menu[] = array(gettext("Routes"), "/diag_routes.php", "fa-route");
 $diagnostics_menu = msort(array_merge($diagnostics_menu, return_ext_menu("Diagnostics")), 0);
 
 if (!g_get('disablehelpmenu')) {
@@ -479,87 +456,241 @@ if (are_notices_pending()) {
 		$display_notices = true;
 	}
 }
+
+if ($display_notices) {
+    $notices = get_notices();
+    if (!is_array($notices)) {
+        $notices = array();
+	}
+}
 ?>
-<body id="<?=$numColumns?>">
-<nav id="topmenu" class="navbar navbar-<?=$menuclass?>-top navbar-inverse">
-	<div class="container">
-		<div class="navbar-header">
-			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#pf-navbar">
-				<span class="sr-only">Toggle navigation</span>
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-			</button>
-			<a class="navbar-brand" href="/">
-				<?php include("/usr/local/www/logo.svg"); ?>
-				<span style="color:white;font-size:.5em;text-transform:uppercase;letter-spacing:1px;">Community Edition</span>
-			</a>
-		</div>
-		<div class="collapse navbar-collapse" id="pf-navbar">
-			<ul class="nav navbar-nav">
-			<?php
-                if ($user_settings['webgui']['webguihostnamemenu'] == 'hostonly') {
-                    $help_menu_title = htmlspecialchars($config['system']['hostname']);
-                }
-                elseif ($user_settings['webgui']['webguihostnamemenu'] == 'fqdn') {
-                    $help_menu_title = htmlspecialchars($system_url);
-                }
-                else {
-                    $help_menu_title = 'Help';
-                }
-                foreach ([
-					['name' => 'System',	     'menu' => $system_menu,	  'href' => null],
-					['name' => 'Interfaces',     'menu' => $interfaces_menu,  'href' => null],
-					['name' => 'Firewall',	     'menu' => $firewall_menu,	  'href' => null],
-					['name' => 'Services',	     'menu' => $services_menu,	  'href' => null],
-					['name' => 'VPN',		     'menu' => $vpn_menu,		  'href' => null],
-					['name' => 'Status',	     'menu' => $status_menu,	  'href' => null],
-					['name' => 'Diagnostics',    'menu' => $diagnostics_menu, 'href' => null],
-                    ['name' => $help_menu_title, 'menu' => $help_menu,		  'href' => '_blank']
-				] as $item):
-					if ($item['name'] == 'Help' && g_get('disablehelpmenu')) {
-						continue;
-					}
+<body id="<?=$numColumns?>" class="<?=$g['theme']?>">
+<div class="wrapper">
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <a href="/" class="navbar-brand">
+                <img src="/logo.svg" alt="SecuEdge Logo" class="logo">
+                <span class="logo-text">SecuEdge</span>
+            </a>
+        </div>
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a href="/index.php" class="nav-link <?=($page == 'index.php') ? 'active' : ''?>">
+                    <i class="fa fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            
+            <!-- System Menu -->
+            <li class="nav-item">
+                <a href="#systemMenu" class="nav-link has-submenu" data-toggle="collapse" aria-expanded="false">
+                    <i class="fa fa-cog"></i>
+                    <span>System</span>
+                    <i class="fa fa-chevron-down submenu-icon"></i>
+                </a>
+                <div class="collapse submenu" id="systemMenu">
+                    <ul class="nav flex-column">
+                        <?php foreach ($system_menu as $item): ?>
+                            <?php if ($item[0] == '-DIVIDER-'): ?>
+                                <li class="divider"></li>
+                            <?php else: ?>
+                                <li class="nav-item">
+                                    <a href="<?=$item[1]?>" class="nav-link">
+                                        <?php if (isset($item[2])): ?>
+                                            <i class="fa <?=$item[2]?>"></i>
+                                        <?php endif; ?>
+                                        <span><?=$item[0]?></span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </li>
 
-					$menu_output = output_menu($item['menu'], $item['href'], $item['name']);
+            <!-- Interfaces Menu -->
+            <li class="nav-item">
+                <a href="#interfacesMenu" class="nav-link has-submenu" data-toggle="collapse" aria-expanded="false">
+                    <i class="fa fa-network-wired"></i>
+                    <span>Interfaces</span>
+                    <i class="fa fa-chevron-down submenu-icon"></i>
+                </a>
+                <div class="collapse submenu" id="interfacesMenu">
+                    <ul class="nav flex-column">
+                        <?php foreach ($interfaces_menu as $item): ?>
+                            <?php if ($item[0] == '-DIVIDER-'): ?>
+                                <li class="divider"></li>
+                            <?php else: ?>
+                                <li class="nav-item">
+                                    <a href="<?=$item[1]?>" class="nav-link">
+                                        <?php if (isset($item[2])): ?>
+                                            <i class="fa <?=$item[2]?>"></i>
+                                        <?php endif; ?>
+                                        <span><?=$item[0]?></span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </li>
 
-					if (strlen($menu_output) > 0):
-?>
-				<li class="dropdown">
-					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-						<?=gettext($item['name'])?>
-						<span class="caret"></span>
-					</a>
-					<ul class="dropdown-menu" role="menu"><?=$menu_output?></ul>
-				</li>
+            <!-- Firewall Menu -->
+            <li class="nav-item">
+                <a href="#firewallMenu" class="nav-link has-submenu" data-toggle="collapse" aria-expanded="false">
+                    <i class="fa fa-shield-alt"></i>
+                    <span>Firewall</span>
+                    <i class="fa fa-chevron-down submenu-icon"></i>
+                </a>
+                <div class="collapse submenu" id="firewallMenu">
+                    <ul class="nav flex-column">
+                        <?php foreach ($firewall_menu as $item): ?>
+                            <?php if ($item[0] == '-DIVIDER-'): ?>
+                                <li class="divider"></li>
+                            <?php else: ?>
+                                <li class="nav-item">
+                                    <a href="<?=$item[1]?>" class="nav-link">
+                                        <?php if (isset($item[2])): ?>
+                                            <i class="fa <?=$item[2]?>"></i>
+                                        <?php endif; ?>
+                                        <span><?=$item[0]?></span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </li>
 
-<?php
-					endif;
-			 	endforeach?>
-			</ul>
-			<ul class="nav navbar-nav navbar-right">
-				<?php if ($display_notices):?>
-					<?php $notices = get_notices()?>
-					<li class="dropdown">
-						<a href="#" data-toggle="modal" data-target="#notices" role="button" aria-expanded="false">
-							<i class="fa fa-bell text-danger" title="<?=gettext("Notices")?>"></i>
-							<span class="badge bg-danger"><?=count($notices)?></span>
-						</a>
-					</li>
-				<?php
-					endif;
-				?>
-					<li class="dropdown">
-						<a href="/index.php?logout" usepost>
-							<i class="fa fa-sign-out" title="<?=gettext("Logout") . " (" . $_SESSION['Username'] . "@" . htmlspecialchars($system_url) . ")"?>"></i>
-						</a>
-					</li>
-			</ul>
-		</div>
-	</div>
-</nav>
+            <!-- Services Menu -->
+            <li class="nav-item">
+                <a href="#servicesMenu" class="nav-link has-submenu" data-toggle="collapse" aria-expanded="false">
+                    <i class="fa fa-cogs"></i>
+                    <span>Services</span>
+                    <i class="fa fa-chevron-down submenu-icon"></i>
+                </a>
+                <div class="collapse submenu" id="servicesMenu">
+                    <ul class="nav flex-column">
+                        <?php foreach ($services_menu as $item): ?>
+                            <?php if ($item[0] == '-DIVIDER-'): ?>
+                                <li class="divider"></li>
+                            <?php else: ?>
+                                <li class="nav-item">
+                                    <a href="<?=$item[1]?>" class="nav-link">
+                                        <?php if (isset($item[2])): ?>
+                                            <i class="fa <?=$item[2]?>"></i>
+                                        <?php endif; ?>
+                                        <span><?=$item[0]?></span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </li>
 
-<div class="container <?=$menuclass?>" <?=$columnsContainer?>>
+            <!-- VPN Menu -->
+            <li class="nav-item">
+                <a href="#vpnMenu" class="nav-link has-submenu" data-toggle="collapse" aria-expanded="false">
+                    <i class="fa fa-lock"></i>
+                    <span>VPN</span>
+                    <i class="fa fa-chevron-down submenu-icon"></i>
+                </a>
+                <div class="collapse submenu" id="vpnMenu">
+                    <ul class="nav flex-column">
+                        <?php foreach ($vpn_menu as $item): ?>
+                            <?php if ($item[0] == '-DIVIDER-'): ?>
+                                <li class="divider"></li>
+                            <?php else: ?>
+                                <li class="nav-item">
+                                    <a href="<?=$item[1]?>" class="nav-link">
+                                        <?php if (isset($item[2])): ?>
+                                            <i class="fa <?=$item[2]?>"></i>
+                                        <?php endif; ?>
+                                        <span><?=$item[0]?></span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </li>
+
+            <!-- Status Menu -->
+            <li class="nav-item">
+                <a href="#statusMenu" class="nav-link has-submenu" data-toggle="collapse" aria-expanded="false">
+                    <i class="fa fa-chart-line"></i>
+                    <span>Status</span>
+                    <i class="fa fa-chevron-down submenu-icon"></i>
+                </a>
+                <div class="collapse submenu" id="statusMenu">
+                    <ul class="nav flex-column">
+                        <?php foreach ($status_menu as $item): ?>
+                            <?php if ($item[0] == '-DIVIDER-'): ?>
+                                <li class="divider"></li>
+                            <?php else: ?>
+                                <li class="nav-item">
+                                    <a href="<?=$item[1]?>" class="nav-link">
+                                        <?php if (isset($item[2])): ?>
+                                            <i class="fa <?=$item[2]?>"></i>
+                                        <?php endif; ?>
+                                        <span><?=$item[0]?></span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </li>
+
+            <!-- Diagnostics Menu -->
+            <li class="nav-item">
+                <a href="#diagnosticsMenu" class="nav-link has-submenu" data-toggle="collapse" aria-expanded="false">
+                    <i class="fa fa-stethoscope"></i>
+                    <span>Diagnostics</span>
+                    <i class="fa fa-chevron-down submenu-icon"></i>
+                </a>
+                <div class="collapse submenu" id="diagnosticsMenu">
+                    <ul class="nav flex-column">
+                        <?php foreach ($diagnostics_menu as $item): ?>
+                            <?php if ($item[0] == '-DIVIDER-'): ?>
+                                <li class="divider"></li>
+                            <?php else: ?>
+                                <li class="nav-item">
+                                    <a href="<?=$item[1]?>" class="nav-link">
+                                        <?php if (isset($item[2])): ?>
+                                            <i class="fa <?=$item[2]?>"></i>
+                                        <?php endif; ?>
+                                        <span><?=$item[0]?></span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <?php if ($display_notices): ?>
+                <a href="#" data-toggle="modal" data-target="#notices" class="nav-link">
+                    <i class="fa fa-bell"></i>
+                    <span class="badge"><?=count($notices)?></span>
+                </a>
+            <?php endif; ?>
+            <a href="/index.php?logout" usepost class="nav-link">
+                <i class="fa fa-sign-out-alt"></i>
+                <span><?=gettext("Logout") . " (" . $_SESSION['Username'] . ")"?></span>
+            </a>
+        </div>
+    </nav>
+
+    <div id="content">
+        <?php if (isset($notitle)): ?>
+            <br />
+        <?php endif; ?>
+        <div class="container-fluid">
 
 <?php
 	// Print a warning if current user = admin and the password hash is still set to the default value
@@ -597,14 +728,6 @@ if (are_notices_pending()) {
 		<li>
 			<a href="#" title="<?=gettext("Save dashboard layout")?>" id="btnstore" class="invisible">
 				<i class="fa fa-save icon-pointer"></i>
-			</a>
-		</li>
-	<?php endif?>
-
-	<?php if ($dashboard_available_widgets_hidden): ?>
-		<li>
-			<a onclick="$('#widget-available').toggle(360);" title="<?=gettext("Available widgets")?>">
-				<i class="fa fa-plus icon-pointer"></i>
 			</a>
 		</li>
 	<?php endif?>
@@ -671,7 +794,7 @@ if (!$hide_service_status && !empty($shortcuts[$shortcut_section]['service']) &&
 	}
 	if (!empty($ssvc)) {
 		// echo '<li>'. get_service_status_icon($ssvc, false). '</li>'; TODO: Add missing function
-		echo '<li>'. get_service_control_links($ssvc, false). '</li>';
+		echo '<li>' . get_service_control_links($ssvc, false) . '</li>';
 	}
 }
 
@@ -688,13 +811,6 @@ if (('' != ($link = get_shortcut_log_link($shortcut_section, false))) && (isAllo
 }
 
 ?>
-	<?php if (!g_get('disablehelpicon') && isAllowedPage("help.php")): ?>
-		<li>
-			<a href="<?=$helpurl?>" target="_blank" title="<?=gettext("Help for items on this page")?>">
-				<i class="fa fa-question-circle"></i>
-			</a>
-		</li>
-	<?php endif?>
 		</ul>
 	</header>
 <?php
@@ -810,6 +926,45 @@ if ($display_notices):
 				}
 			});
 		});
+	});
+
+    // Handle submenu toggling
+    $('.nav-link.has-submenu').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var $submenu = $(this).siblings('.submenu');
+        var $icon = $(this).find('.submenu-icon');
+        
+        // Close other submenus
+        $('.submenu').not($submenu).slideUp(300);
+        $('.submenu-icon').not($icon).removeClass('rotate-180');
+        
+        // Toggle current submenu
+        $submenu.slideToggle(300);
+        $icon.toggleClass('rotate-180');
+        
+        // Toggle active state
+        $('.nav-link.has-submenu').not(this).removeClass('active');
+        $(this).toggleClass('active');
+    });
+
+    // Set active state based on current URL
+    var currentPath = window.location.pathname;
+    $('.nav-link').each(function() {
+        var linkPath = $(this).attr('href');
+        if (linkPath === currentPath) {
+            $(this).addClass('active');
+            // If it's a submenu item, show parent menu and add active state
+            var $parentMenu = $(this).closest('.submenu');
+            if ($parentMenu.length) {
+                $parentMenu.show();
+                $parentMenu.siblings('.nav-link.has-submenu')
+                    .addClass('active')
+                    .find('.submenu-icon')
+                    .addClass('rotate-180');
+            }
+        }
 	});
 //]]>
 </script>

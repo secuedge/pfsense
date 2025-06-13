@@ -119,6 +119,7 @@ function display_error_form($http_code, $desc) {
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 	    <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css" type="text/css">
 	    <link rel="stylesheet" href="/css/login.css?v=<?=filemtime('/usr/local/www/css/login.css')?>" type="text/css">
+	    <link rel="stylesheet" href="/css/custom-theme.css?v=<?=filemtime('/usr/local/www/css/custom-theme.css')?>" type="text/css">
 		<title><?=gettext("Error"); ?></title>
 	</head>
 
@@ -129,7 +130,9 @@ function display_error_form($http_code, $desc) {
 					<div class="row">
 						<div class="col-sm-4">
 							<div id="logodiv" style="text-align:center" class="nowarning">
-								<?php include("/usr/local/www/logo.svg"); ?>
+								<object data="/logo.svg" type="image/svg+xml" height="60" width="240" class="logo">
+									Security Gateway
+								</object>
 							</div>
 						</div>
 						<div class="col-sm-8 nowarning msgbox text-center">
@@ -281,7 +284,9 @@ function display_login_form() {
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 	    <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css" type="text/css">
-	    <link rel="stylesheet" href="/css/login.css?v=<?=filemtime('/usr/local/www/css/login.css')?>" type="text/css">
+	    <link rel="stylesheet" href="/vendor/font-awesome/css/all.min.css" type="text/css">
+	    <link rel="stylesheet" href="/css/login-modern.css?v=<?=filemtime('/usr/local/www/css/login-modern.css')?>" type="text/css">
+	    <link rel="stylesheet" href="/css/custom-theme.css?v=<?=filemtime('/usr/local/www/css/custom-theme.css')?>" type="text/css">
 		<title><?=$login_title; ?></title>
 		<script type="text/javascript">
 			//<![CDATA{
@@ -290,98 +295,49 @@ function display_login_form() {
 		</script>
 	</head>
 
-	<body id="login" >
+	<body id="login">
+		<div class="shape shape-1"></div>
+		<div class="shape shape-2"></div>
+		<div class="shape shape-3"></div>
 		<div id="total">
-			<header>
-				<div id="headerrow">
-					<div class="row">
-						<!-- Header left logo box -->
-						<div class="col-sm-4">
-							<div id="logodiv" style="text-align:center" class="nowarning">
-								<?php include("/usr/local/www/logo.svg"); ?>
+			<div class="<?=$warnclass?>">
+				<div class="container">
+					<div class="loginCont">
+						<div class="login-logo">
+							<img src="/SecuEdge_Logo.png" alt="SecuEdge Logo" class="logo">
+						</div>
+						<form method="post" <?=$loginautocomplete?> class="login">
+							<p class="form-title">Login to SecuEdge</p>
+							<?php if (!empty($_POST['usernamefld'])): ?>
+							<div class="msgbox text-center text-danger">
+								<h4><i class='fas fa-exclamation-circle'></i> <?=$_SESSION['Login_Error']?></h4>
 							</div>
-						</div>
-
-						<!-- Header center message box -->
-						<div class="col-sm-4 nowarning msgbox text-center text-danger">
-<?php
-						if (!empty($_POST['usernamefld'])) {
-							print("<h4>" . $_SESSION['Login_Error'] . "</h4>");
-						}
-?>
-						</div>
-
-						<!-- Header right message box (hostname or msg)-->
-						<div class="col-sm-4 nowarning msgbox text-center">
-							<span id="hostspan">
-								<h4><?=$loginbannerstr?></h4>
-							</span>
-						</div>
-					</div>
-<?php
-	if ($warnclass == "pagebodywarn") {
-?>
-					<div class="row">
-						<div class="col-sm-12">
-							<div class="alert alert-warning <?=$warnclass?>">
+							<?php endif; ?>
+							<div class="input-wrapper">
+								<i class="fas fa-user input-icon"></i>
+								<input name="usernamefld" id="usernamefld" type="text" class="input-with-icon" placeholder="Username" autocorrect="off" autocapitalize="none"/>
+							</div>
+							<div class="input-wrapper">
+								<i class="fas fa-lock input-icon"></i>
+								<input name="passwordfld" id="passwordfld" type="password" class="input-with-icon" placeholder="Password" />
+							</div>
+							<?php if ($warnclass == "pagebodywarn"): ?>
+							<div class="alert alert-warning">
+								<i class="fas fa-exclamation-triangle"></i>
 								<?=gettext("The IP address being used to access this router is not configured locally, which may be forwarded by NAT or other means.
 								If this forwarding is unexpected, it should be verified that a man-in-the-middle attack is not taking place.")?>
 							</div>
-						</div>
+							<?php endif; ?>
+							<input type="submit" name="login" value="Sign In" />
+						</form>
 					</div>
-<?php
-	}
-?>
-	            </div>
-	        </header>
+				</div>
+			</div>
+		</div>
 
-	        <div style="background: <?=$logincssfile?>;" class="<?=$warnclass?>">
-	        	<div class="col-sm-4"></div>
-
-	        	<div class="col-sm-4 offset-md-4 logoCol">
-					<div class="loginCont center-block">
-		                <form method="post" <?=$loginautocomplete?> class="login">
-			                <p class="form-title">Sign In</p>
-			                <input name="usernamefld" id="usernamefld" type="text" placeholder="Username" autocorrect="off" autocapitalize="none"/>
-			                <input name="passwordfld" id="passwordfld" type="password" placeholder="Password" />
-			                <input type="submit" name="login" value="Sign In" class="btn btn-success btn-sm" />
-		                </form>
-					</div>
-	            </div>
-
-	        	<div class="col-sm-4"></div>
-	        </div>
-
-	        <footer id="3">
-	            <div id="footertext">
-					<p class="text-muted">
-						<?=print_credit()?>
-					</p>
-	            </div>
-	        </footer>
-	    </div>
-
-		<script type="text/javascript">
-		//<![CDATA[
-			/* Prevent duplicate submission  */
-			events.push(function() {
-				var submitted = false;
-
-				$(form).submit(function(e){
-					if (submitted) {
-						e.preventDefault();
-					} else {
-						submitted = true;
-						// Form is submitted because default action is not prevented
-					}
-				});
-			});
-		//]]>
-		</script>
-
-	    <script src="/vendor/jquery/jquery-3.5.1.min.js?v=<?=filemtime('/usr/local/www/vendor/jquery/jquery-3.5.1.min.js')?>"></script>
-		<script src="/vendor/bootstrap/js/bootstrap.min.js?v=<?=filemtime('/usr/local/www/vendor/bootstrap/js/bootstrap.min.js')?>"></script>
-		<script src="/js/pfSense.js?v=<?=filemtime('/usr/local/www/js/pfSense.js')?>"></script>
+		<script src="/vendor/jquery/jquery-3.5.1.min.js"></script>
+		<script src="/vendor/bootstrap/js/bootstrap.min.js"></script>
+		<script src="/js/pfSense.js"></script>
 
 		<script type="text/javascript">
 		//!<[CDATA[
@@ -399,7 +355,6 @@ function display_login_form() {
 		});
 		//]]>
 		</script>
-
 	</body>
 </html>
 

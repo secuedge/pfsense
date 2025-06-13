@@ -124,6 +124,32 @@ $tg_displayed_realifsarray = [];
 	<script src="/vendor/visibility/visibility-1.2.3.min.js?v=<?=filemtime('/usr/local/www/vendor/visibility/visibility-1.2.3.min.js')?>"></script>
 
 	<link href="/vendor/nvd3/nv.d3.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="/vendor/font-awesome/css/all.min.css">
+	<link rel="stylesheet" href="/css/traffic-widget-modern.css">
+	<style>
+	.traffic-widget-chart, .d3-chart {
+		margin-bottom: 0.1rem !important;
+		padding: 0.5rem 0.5rem 0rem 0.5rem !important;
+		background: #fff;
+		border-radius: 10px;
+		box-shadow: 0 1px 6px rgba(25,118,210,0.06);
+		height: 140px;
+		display: flex;
+		align-items: flex-end;
+	}
+	.traffic-widget-chart svg {
+		height: 90px !important;
+		max-height: 90px !important;
+		min-height: 0 !important;
+		margin-bottom: 0 !important;
+		padding-bottom: 0 !important;
+		display: block;
+	}
+	#traffic-chart-error {
+		margin-bottom: 0.3rem;
+		font-size: 0.97rem;
+	}
+	</style>
 
 	<div id="traffic-chart-error" class="alert alert-danger" style="display: none;"></div>
 <?php
@@ -154,6 +180,9 @@ $tg_displayed_realifsarray = [];
 		echo '</div>';
 	}
 ?>
+<div style="width:100%;display:flex;justify-content:center;margin:0.5rem 0 0.2rem 0;">
+    <a href="/status_graph.php" class="btn btn-primary" style="min-width:160px;font-weight:600;font-size:1rem;box-shadow:0 1px 4px rgba(25,118,210,0.08);border-radius:6px;">View Realtime</a>
+</div>
 
 <!-- close the body we're wrapped in and add a configuration-panel -->
 </div>
@@ -295,3 +324,8 @@ events.push(function() {
 </script>
 
 <script src="/js/traffic-graphs.js?v=<?=filemtime('/usr/local/www/js/traffic-graphs.js')?>"></script>
+<script src="/vendor/chart.js/chart.min.js"></script>
+<script>
+// Placeholder for Chart.js integration and AJAX updates
+// Implement JS to update the chart with real-time traffic data
+</script>

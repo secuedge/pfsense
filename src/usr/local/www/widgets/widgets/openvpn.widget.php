@@ -45,72 +45,68 @@ if (!function_exists('printPanel')) {
 
 			$got_ovpn_server = true;
 
-		$opstring .= "<div class=\"widget panel panel-default\">";
-		$opstring .= "<div class=\"panel-heading\"><h2 class=\"panel-title\">" .
-		    htmlspecialchars($server['name']);
-		if ($server['conns'][0]['common_name'] != '[error]') {
-			$opstring .= ' (' . sizeof($server['conns']) . ')';
-		}
-		$opstring .=    "</h2></div>";
-		$opstring .=	"<div class=\"table-responsive\">";
-		$opstring .=		"<table class=\"table table-striped table-hover table-condensed sortable-theme-bootstrap\" data-sortable>";
-		$opstring .=			"<thead>";
-		$opstring .=				"<tr>";
-		$opstring .=					"<th>" . gettext('Name/Time') . "</th>";
-		$opstring .=					"<th>" . gettext('Real/Virtual IP') . "</th>";
-		$opstring .=					"<th></th>";
-		$opstring .=				"</tr>";
-		$opstring .=			"</thead>";
-		$opstring .=			"<tbody>";
+			$opstring .= "<div class=\"openvpn-widget\">";
+			$opstring .= "<div class=\"openvpn-widget-header\">";
+			$opstring .= "<h3 class=\"openvpn-widget-title\">" . htmlspecialchars($server['name']);
+			if ($server['conns'][0]['common_name'] != '[error]') {
+				$opstring .= ' <span style="color: #718096; font-size: 0.875rem;">(' . sizeof($server['conns']) . ')</span>';
+			}
+			$opstring .= "</h3></div>";
+			$opstring .= "<div class=\"table-responsive\">";
+			$opstring .= "<table class=\"openvpn-table\" data-sortable>";
+			$opstring .= "<thead>";
+			$opstring .= "<tr>";
+			$opstring .= "<th>" . gettext('Name/Time') . "</th>";
+			$opstring .= "<th>" . gettext('Real/Virtual IP') . "</th>";
+			$opstring .= "<th></th>";
+			$opstring .= "</tr>";
+			$opstring .= "</thead>";
+			$opstring .= "<tbody>";
 
-					$rowIndex = 0;
-					foreach ($server['conns'] as $conn):
-						$evenRowClass = $rowIndex % 2 ? " listMReven" : " listMRodd";
-						$rowIndex++;
+			$rowIndex = 0;
+			foreach ($server['conns'] as $conn):
+				$evenRowClass = $rowIndex % 2 ? " listMReven" : " listMRodd";
+				$rowIndex++;
 
-		$opstring .=				"<tr name=\"" . "r:" . $server['mgmt'] . ":" . $conn['remote_host'] . "\" class=\"" . $evenRowClass . "\">";
-		$opstring .=					"<td>";
-		$opstring .=						$conn['common_name'];
-		$opstring .=					"</td>";
-		$opstring .=					"<td>";
-		$opstring .=						$conn['remote_host'];
-		$opstring .=					"</td>";
-		$opstring .=					"<td>";
-		$opstring .=						"<i class=\"fa fa-times\" ";
-		$opstring .=							"onclick=\"killClient('" . $server['mgmt'] . "', '" . $conn['remote_host'] . "', '');\" ";
-		$opstring .=							"style=\"cursor:pointer;\" ";
-		$opstring .=							"name=\"" . "i:" . $server['mgmt'] . ":" . $conn['remote_host'] . "\" ";
-		$opstring .=							"title=\"" . sprintf(gettext('Kill client connection from %s'), $conn['remote_host']) . "\">";
-		$opstring .=						"</i>&nbsp;";
-		$opstring .=						"<i class=\"fa fa-times-circle text-danger\" ";
-		$opstring .=							"onclick=\"killClient('" . $server['mgmt'] . "', '" . $conn['remote_host'] . "', '" . $conn['client_id'] . "');\" ";
-		$opstring .=							"style=\"cursor:pointer;\" ";
-		$opstring .=							"name=\"" . "i:" . $server['mgmt'] . ":" . $conn['remote_host'] . "\" ";
-		$opstring .=							"title=\"" . sprintf(gettext('Halt client connection from %s'), $conn['remote_host']) . "\">";
-		$opstring .=						"</i>";
-		$opstring .=					"</td>";
-		$opstring .=				"</tr>";
-		$opstring .=				"<tr name=\"" . "r:" . $server['mgmt'] . ":" . $conn['remote_host'] . "\" class=\"" . $evenRowClass . "\">";
-		$opstring .=					"<td>";
-		$opstring .=						$conn['connect_time'];
-		$opstring .=					"</td>";
-		$opstring .=					"<td>";
-		$opstring .=						$conn['virtual_addr'];
-		if (!empty($conn['virtual_addr']) && !empty($conn['virtual_addr6'])) {
-			$opstring .=						"<br />";
-		}
-		$opstring .=						$conn['virtual_addr6'];
-		$opstring .=					"</td>";
-		$opstring .=					"<td></td>";
-		$opstring .=				"</tr>";
+				$opstring .= "<tr name=\"r:" . $server['mgmt'] . ":" . $conn['remote_host'] . "\" class=\"" . $evenRowClass . "\">";
+				$opstring .= "<td>";
+				$opstring .= "<div class=\"openvpn-connection\">";
+				$opstring .= "<span>" . $conn['common_name'] . "</span>";
+				$opstring .= "<span class=\"openvpn-connection-time\">" . $conn['connect_time'] . "</span>";
+				$opstring .= "</div>";
+				$opstring .= "</td>";
+				$opstring .= "<td>";
+				$opstring .= "<div class=\"openvpn-connection\">";
+				$opstring .= "<span class=\"openvpn-ip\">" . $conn['remote_host'] . "</span>";
+				if (!empty($conn['virtual_addr'])) {
+					$opstring .= "<span class=\"openvpn-ip\">" . $conn['virtual_addr'] . "</span>";
+				}
+				if (!empty($conn['virtual_addr6'])) {
+					$opstring .= "<span class=\"openvpn-ip\">" . $conn['virtual_addr6'] . "</span>";
+				}
+				$opstring .= "</div>";
+				$opstring .= "</td>";
+				$opstring .= "<td>";
+				$opstring .= "<div class=\"openvpn-action\">";
+				$opstring .= "<i class=\"fa fa-times\" ";
+				$opstring .= "onclick=\"killClient('" . $server['mgmt'] . "', '" . $conn['remote_host'] . "', '');\" ";
+				$opstring .= "name=\"i:" . $server['mgmt'] . ":" . $conn['remote_host'] . "\" ";
+				$opstring .= "title=\"" . sprintf(gettext('Kill client connection from %s'), $conn['remote_host']) . "\">";
+				$opstring .= "</i>";
+				$opstring .= "<i class=\"fa fa-times-circle\" ";
+				$opstring .= "onclick=\"killClient('" . $server['mgmt'] . "', '" . $conn['remote_host'] . "', '" . $conn['client_id'] . "');\" ";
+				$opstring .= "name=\"i:" . $server['mgmt'] . ":" . $conn['remote_host'] . "\" ";
+				$opstring .= "title=\"" . sprintf(gettext('Halt client connection from %s'), $conn['remote_host']) . "\">";
+				$opstring .= "</i>";
+				$opstring .= "</div>";
+				$opstring .= "</td>";
+				$opstring .= "</tr>";
+			endforeach;
 
-					endforeach;
-
-		$opstring .=			"</tbody>";
-		$opstring .=		"</table>";
-		$opstring .=	"</div>";
-		$opstring .= "</div>";
-
+			$opstring .= "</tbody>";
+			$opstring .= "</table>";
+			$opstring .= "</div>";
+			$opstring .= "</div>";
 		endforeach;
 
 		print($opstring);
@@ -127,68 +123,63 @@ if (!function_exists('printPanel')) {
 		endif;
 
 		if ($got_sk_server):
+			$opstring = "";
+			$opstring .= "<div class=\"openvpn-widget\">";
+			$opstring .= "<div class=\"openvpn-widget-header\">";
+			$opstring .= "<h3 class=\"openvpn-widget-title\">" . gettext("Peer to Peer Server Instance Statistics") . "</h3>";
+			$opstring .= "</div>";
+			$opstring .= "<div class=\"table-responsive\">";
+			$opstring .= "<table class=\"openvpn-table\" data-sortable>";
+			$opstring .= "<thead>";
+			$opstring .= "<tr>";
+			$opstring .= "<th>" . gettext('Name/Time') . "</th>";
+			$opstring .= "<th>" . gettext('Remote/Virtual IP') . "</th>";
+			$opstring .= "<th></th>";
+			$opstring .= "</tr>";
+			$opstring .= "</thead>";
+			$opstring .= "<tbody>";
 
-		$opstring = "";
-		$opstring .= "<div class=\"widget panel panel-default\">";
-		$opstring .=	"<div class=\"panel-heading\"><h2 class=\"panel-title\">" . gettext("Peer to Peer Server Instance Statistics") . "</h2></div>";
-		$opstring .=	"<div class=\"table-responsive\">";
-		$opstring .=		"<table class=\"table table-striped table-hover table-condensed sortable-theme-bootstrap\" data-sortable>";
-		$opstring .=			"<thead>";
-		$opstring .=				"<tr>";
-		$opstring .=					"<th>" . gettext('Name/Time') . "</th>";
-		$opstring .=					"<th>" . gettext('Remote/Virtual IP') . "</th>";
-		$opstring .=					"<th></th>";
-		$opstring .=				"</tr>";
-		$opstring .=			"</thead>";
-		$opstring .=			"<tbody>";
+			foreach ($sk_servers as $sk_server):
+				if (in_array($sk_server['vpnid'], $skipovpns)) {
+					continue;
+				}
 
-					foreach ($sk_servers as $sk_server):
-						if (in_array($sk_server['vpnid'], $skipovpns)) {
-							continue;
-						}
+				$opstring .= "<tr name=\"r:" . $sk_server['port'] . ":" . $sk_server['remote_host'] . "\">";
+				$opstring .= "<td>";
+				$opstring .= "<div class=\"openvpn-connection\">";
+				$opstring .= "<span>" . $sk_server['name'] . "</span>";
+				$opstring .= "<span class=\"openvpn-connection-time\">" . $sk_server['connect_time'] . "</span>";
+				$opstring .= "</div>";
+				$opstring .= "</td>";
+				$opstring .= "<td>";
+				$opstring .= "<div class=\"openvpn-connection\">";
+				$opstring .= "<span class=\"openvpn-ip\">" . $sk_server['remote_host'] . "</span>";
+				if (!empty($sk_server['virtual_addr'])) {
+					$opstring .= "<span class=\"openvpn-ip\">" . $sk_server['virtual_addr'] . "</span>";
+				}
+				if (!empty($sk_server['virtual_addr6'])) {
+					$opstring .= "<span class=\"openvpn-ip\">" . $sk_server['virtual_addr6'] . "</span>";
+				}
+				$opstring .= "</div>";
+				$opstring .= "</td>";
+				$opstring .= "<td>";
+				$opstring .= "<div class=\"openvpn-status\">";
+				if (strtolower($sk_server['state']) == "connected") {
+					$opstring .= "<i class=\"fa fa-arrow-up\"></i>";
+				} else {
+					$opstring .= "<i class=\"fa fa-arrow-down\"></i>";
+				}
+				$opstring .= "</div>";
+				$opstring .= "</td>";
+				$opstring .= "</tr>";
+			endforeach;
 
-		$opstring .=				"<tr name=\"r:" . $sk_server['port'] . ":" . $sk_server['remote_host'] . "\">";
-		$opstring .=					"<td>";
-		$opstring .=						$sk_server['name'];
-		$opstring .=					"</td>";
-		$opstring .=					"<td>";
-		$opstring .=						$sk_server['remote_host'];
-		$opstring .=					"</td>";
-		$opstring .=					"<td>";
+			$opstring .= "</tbody>";
+			$opstring .= "</table>";
+			$opstring .= "</div>";
+			$opstring .= "</div>";
 
-						if (strtolower($sk_server['state']) == "connected") {
-							/* tunnel is up */
-		$opstring .=						"<i class=\"fa fa-arrow-up text-success\"></i>";
-						} else {
-							/* tunnel is down */
-		$opstring .=						"<i class=\"fa fa-arrow-down text-danger\"></i>";
-						}
-
-		$opstring .=					"</td>";
-		$opstring .=				"</tr>";
-		$opstring .=				"<tr name=\"r:" . $sk_server['port'] . ":" . $sk_server['remote_host'] . "\">";
-		$opstring .=					"<td>";
-		$opstring .=						$sk_server['connect_time'];
-		$opstring .=					"</td>";
-		$opstring .=					"<td>";
-		$opstring .=						$sk_server['virtual_addr'];
-		if (!empty($sk_server['virtual_addr']) && !empty($sk_server['virtual_addr6'])) {
-			$opstring .=						"<br />";
-		}
-		$opstring .=						$sk_server['virtual_addr6'];
-		$opstring .=					"</td>";
-		$opstring .=					"<td></td>";
-		$opstring .=				"</tr>";
-
-					endforeach;
-
-		$opstring .=			"</tbody>";
-		$opstring .=		"</table>";
-		$opstring .=	"</div>";
-		$opstring .= "</div>";
-
-		print($opstring);
-
+			print($opstring);
 		endif;
 
 		$got_ovpn_client = false;
@@ -203,69 +194,63 @@ if (!function_exists('printPanel')) {
 		endif;
 
 		if ($got_ovpn_client):
+			$opstring = "";
+			$opstring .= "<div class=\"openvpn-widget\">";
+			$opstring .= "<div class=\"openvpn-widget-header\">";
+			$opstring .= "<h3 class=\"openvpn-widget-title\">" . gettext("Client Instance Statistics") . "</h3>";
+			$opstring .= "</div>";
+			$opstring .= "<div class=\"table-responsive\">";
+			$opstring .= "<table class=\"openvpn-table\" data-sortable>";
+			$opstring .= "<thead>";
+			$opstring .= "<tr>";
+			$opstring .= "<th>" . gettext('Name/Time') . "</th>";
+			$opstring .= "<th>" . gettext('Remote/Virtual IP') . "</th>";
+			$opstring .= "<th></th>";
+			$opstring .= "</tr>";
+			$opstring .= "</thead>";
+			$opstring .= "<tbody>";
 
-		$opstring = "";
+			foreach ($clients as $client):
+				if (in_array($client['vpnid'], $skipovpns)) {
+					continue;
+				}
 
-		$opstring .= "<div class=\"widget panel panel-default\">";
-		$opstring .=	"<div class=\"panel-heading\"><h2 class=\"panel-title\">" . gettext("Client Instance Statistics") . "</h2></div>";
-		$opstring .=	"<div class=\"table-responsive\">";
-		$opstring .=		"<table class=\"table table-striped table-hover table-condensed sortable-theme-bootstrap\" data-sortable>";
-		$opstring .=			"<thead>";
-		$opstring .=				"<tr>";
-		$opstring .=					"<th>" . gettext('Name/Time') . "</th>";
-		$opstring .=					"<th>" . gettext('Remote/Virtual IP') . "</th>";
-		$opstring .=					"<th></th>";
-		$opstring .=				"</tr>";
-		$opstring .=			"</thead>";
-		$opstring .=			"<tbody>";
+				$opstring .= "<tr name=\"r:" . $client['port'] . ":" . $client['remote_host'] . "\">";
+				$opstring .= "<td>";
+				$opstring .= "<div class=\"openvpn-connection\">";
+				$opstring .= "<span>" . $client['name'] . "</span>";
+				$opstring .= "<span class=\"openvpn-connection-time\">" . $client['connect_time'] . "</span>";
+				$opstring .= "</div>";
+				$opstring .= "</td>";
+				$opstring .= "<td>";
+				$opstring .= "<div class=\"openvpn-connection\">";
+				$opstring .= "<span class=\"openvpn-ip\">" . $client['remote_host'] . "</span>";
+				if (!empty($client['virtual_addr'])) {
+					$opstring .= "<span class=\"openvpn-ip\">" . $client['virtual_addr'] . "</span>";
+				}
+				if (!empty($client['virtual_addr6'])) {
+					$opstring .= "<span class=\"openvpn-ip\">" . $client['virtual_addr6'] . "</span>";
+				}
+				$opstring .= "</div>";
+				$opstring .= "</td>";
+				$opstring .= "<td>";
+				$opstring .= "<div class=\"openvpn-status\">";
+				if (strtolower($client['state']) == "connected") {
+					$opstring .= "<i class=\"fa fa-arrow-up\"></i>";
+				} else {
+					$opstring .= "<i class=\"fa fa-arrow-down\"></i>";
+				}
+				$opstring .= "</div>";
+				$opstring .= "</td>";
+				$opstring .= "</tr>";
+			endforeach;
 
-					foreach ($clients as $client):
-						if (in_array($client['vpnid'], $skipovpns)) {
-							continue;
-						}
+			$opstring .= "</tbody>";
+			$opstring .= "</table>";
+			$opstring .= "</div>";
+			$opstring .= "</div>";
 
-		$opstring .=				"<tr name=\"r:" . $client['port'] . ":" . $client['remote_host'] . "\">";
-		$opstring .=					"<td>";
-		$opstring .=						$client['name'];
-		$opstring .=					"</td>";
-		$opstring .=					"<td>";
-		$opstring .=						$client['remote_host'];
-		$opstring .=					"</td>";
-		$opstring .=					"<td>";
-
-						if (strtolower($client['state']) == "connected") {
-							/* tunnel is up */
-		$opstring .=						"<i class=\"fa fa-arrow-up text-success\"></i>";
-						} else {
-							/* tunnel is down */
-		$opstring .=						"<i class=\"fa fa-arrow-down text-danger\"></i>";
-						}
-
-		$opstring .=					"</td>";
-		$opstring .=				"</tr>";
-		$opstring .=				"<tr name=\"r:" . $client['port'] . ":" . $client['remote_host'] . "\">";
-		$opstring .=					"<td>";
-		$opstring .=						$client['connect_time'];
-		$opstring .=					"</td>";
-		$opstring .=					"<td>";
-		$opstring .=						$client['virtual_addr'];
-		if (!empty($client['virtual_addr']) && !empty($client['virtual_addr6'])) {
-			$opstring .=						"<br />";
-		}
-		$opstring .=						$client['virtual_addr6'];
-		$opstring .=					"</td>";
-		$opstring .=					"<td></td>";
-		$opstring .=				"</tr>";
-
-					endforeach;
-
-		$opstring .=			"</tbody>";
-		$opstring .=		"</table>";
-		$opstring .=	"</div>";
-		$opstring .= "</div>";
-
-		print($opstring);
-
+			print($opstring);
 		endif;
 
 		if ((empty($clients)) && (empty($servers)) && (empty($sk_servers))) {
@@ -336,6 +321,133 @@ $widgetperiod = isset($config['widgets']['period']) ? $config['widgets']['period
 $widgetkey_nodash = str_replace("-", "", $widgetkey);
 
 ?>
+
+<style>
+.openvpn-widget {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    font-family: Inter, sans-serif;
+    margin-bottom: 1.5rem;
+}
+
+.openvpn-widget:last-child {
+    margin-bottom: 0;
+}
+
+.openvpn-widget-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.openvpn-widget-title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #2d3748;
+    margin: 0;
+}
+
+.openvpn-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.openvpn-table th {
+    color: #4a5568;
+    font-weight: 500;
+    background: #f5f8fa;
+    padding: 0.75rem;
+    font-size: 13px;
+    line-height: 20px;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.openvpn-table td {
+    padding: 1rem 0.75rem;
+    font-size: 13px;
+    line-height: 20px;
+    color: #4a5568;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.openvpn-table tr:last-child td {
+    border-bottom: none;
+}
+
+.openvpn-table tr:hover {
+    background-color: #f7fafc;
+}
+
+.openvpn-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.openvpn-status i {
+    font-size: 14px;
+}
+
+.openvpn-status i.fa-arrow-up {
+    color: #48BB78;
+}
+
+.openvpn-status i.fa-arrow-down {
+    color: #E53E3E;
+}
+
+.openvpn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.openvpn-action i {
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.openvpn-action i.fa-times {
+    color: #718096;
+}
+
+.openvpn-action i.fa-times-circle {
+    color: #E53E3E;
+}
+
+.openvpn-action i:hover {
+    opacity: 0.8;
+}
+
+.openvpn-empty {
+    text-align: center;
+    padding: 2rem;
+    color: #718096;
+    font-style: italic;
+}
+
+.openvpn-connection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.openvpn-connection-time {
+    font-size: 12px;
+    color: #718096;
+}
+
+.openvpn-ip {
+    font-family: "Inter Mono", monospace;
+    font-size: 12px;
+    color: #4a5568;
+}
+</style>
 
 <div id="<?=htmlspecialchars($widgetkey)?>-openvpn-mainpanel" class="content">
 

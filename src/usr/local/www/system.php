@@ -521,7 +521,7 @@ $section->addInput(new Form_Input(
 	'*Hostname',
 	'text',
 	$pconfig['hostname'],
-	['placeholder' => 'pfSense']
+	['placeholder' => 'SecuEdge']
 ))->setHelp('Name of the firewall host, without domain part.');
 
 $section->addInput(new Form_Input(

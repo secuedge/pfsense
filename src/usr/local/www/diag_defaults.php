@@ -34,7 +34,6 @@
 ##|-PRIV
 
 require_once("guiconfig.inc");
-require_once("pkg-utils.inc");
 
 if ($_POST['Submit'] == " " . gettext("No") . " ") {
 	header("Location: index.php");

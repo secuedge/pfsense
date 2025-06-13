@@ -25,6 +25,89 @@
  */
 
 $(function() {
+	// Initialize Select2 for multi-select elements
+	$('select[multiple]').select2({
+		theme: 'bootstrap',
+		width: '100%',
+		placeholder: 'Select options...',
+		allowClear: true
+	});
+
+	// Initialize Select2 for single-select elements
+	$('select:not([multiple])').select2({
+		theme: 'bootstrap',
+		width: '100%',
+		minimumResultsForSearch: 10
+	});
+
+	// Handle multi-select elements
+	$('select[multiple]').each(function() {
+		var select = $(this);
+		var container = $('<div class="checkbox-list"></div>');
+		var name = select.attr('name');
+		
+		// Hide the original select
+		select.hide();
+		
+		// Create checkboxes for each option
+		select.find('option').each(function() {
+			var option = $(this);
+			var value = option.val();
+			var label = option.text();
+			var checked = option.prop('selected') ? 'checked' : '';
+			
+			var checkbox = $('<div class="checkbox">' +
+				'<label>' +
+				'<input type="checkbox" name="' + name + '[]" value="' + value + '" ' + checked + '> ' +
+				label +
+				'</label>' +
+				'</div>');
+			
+			container.append(checkbox);
+		});
+		
+		// Insert the checkboxes after the select
+		select.after(container);
+		
+		// Add "Select All" checkbox
+		var selectAll = $('<div class="checkbox">' +
+			'<label>' +
+			'<input type="checkbox" class="select-all"> Select All' +
+			'</label>' +
+			'</div>');
+		
+		container.prepend(selectAll);
+		
+		// Handle "Select All" functionality
+		selectAll.find('input').on('change', function() {
+			var checked = $(this).prop('checked');
+			container.find('input[type="checkbox"]:not(.select-all)').prop('checked', checked);
+			updateSelectValues(select, container);
+		});
+		
+		// Update select values when checkboxes change
+		container.find('input[type="checkbox"]:not(.select-all)').on('change', function() {
+			updateSelectValues(select, container);
+			updateSelectAllState(container);
+		});
+	});
+
+	// Function to update the hidden select values
+	function updateSelectValues(select, container) {
+		var values = [];
+		container.find('input[type="checkbox"]:not(.select-all):checked').each(function() {
+			values.push($(this).val());
+		});
+		select.val(values);
+	}
+
+	// Function to update the "Select All" checkbox state
+	function updateSelectAllState(container) {
+		var allChecked = container.find('input[type="checkbox"]:not(.select-all):checked').length === 
+						container.find('input[type="checkbox"]:not(.select-all)').length;
+		container.find('.select-all').prop('checked', allChecked);
+	}
+
 	// Attach collapsable behaviour to select options
 	(function()
 	{
@@ -368,3 +451,156 @@ $(function() {
 		});
 	}(Plugin, $, window, document));
 }(jQuery, window, document));
+
+// Menu Handling
+document.addEventListener('DOMContentLoaded', function() {
+	// Initialize menu state
+	initializeMenuState();
+	
+	// Handle submenu toggles
+	initializeSubmenuToggles();
+	
+	// Handle mobile menu
+	initializeMobileMenu();
+	
+	// Initialize notifications
+	initializeNotifications();
+});
+
+function initializeMenuState() {
+	const currentPath = window.location.pathname;
+	
+	// Set active states based on current URL
+	document.querySelectorAll('.nav-link').forEach(link => {
+		const href = link.getAttribute('href');
+		if (href && currentPath === href) {
+			link.classList.add('active');
+			
+			// If in submenu, expand parent
+			const submenu = link.closest('.submenu');
+			if (submenu) {
+				submenu.classList.add('show');
+				const parentLink = document.querySelector(`[data-bs-target="#${submenu.id}"]`);
+				if (parentLink) {
+					parentLink.classList.add('active');
+					parentLink.setAttribute('aria-expanded', 'true');
+					const icon = parentLink.querySelector('.submenu-icon');
+					if (icon) icon.classList.add('rotate-180');
+				}
+			}
+		}
+	});
+}
+
+function initializeSubmenuToggles() {
+	document.querySelectorAll('.nav-link.has-submenu').forEach(toggle => {
+		toggle.addEventListener('click', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			
+			const targetId = this.getAttribute('href');
+			const submenu = document.querySelector(targetId);
+			const icon = this.querySelector('.submenu-icon');
+			
+			// Close other submenus
+			document.querySelectorAll('.submenu.show').forEach(menu => {
+				if (menu !== submenu) {
+					menu.classList.remove('show');
+					const otherToggle = document.querySelector(`[href="#${menu.id}"]`);
+					if (otherToggle) {
+						otherToggle.classList.remove('active');
+						otherToggle.setAttribute('aria-expanded', 'false');
+						const otherIcon = otherToggle.querySelector('.submenu-icon');
+						if (otherIcon) otherIcon.classList.remove('rotate-180');
+					}
+				}
+			});
+			
+			// Toggle current submenu
+			if (submenu) {
+				submenu.classList.toggle('show');
+				this.classList.toggle('active');
+				this.setAttribute('aria-expanded', submenu.classList.contains('show'));
+				if (icon) icon.classList.toggle('rotate-180');
+			}
+		});
+	});
+}
+
+function initializeMobileMenu() {
+	const sidebarToggle = document.querySelector('.navbar-toggler');
+	const sidebar = document.querySelector('.sidebar');
+	const content = document.getElementById('content');
+	
+	if (sidebarToggle && sidebar && content) {
+		// Toggle menu on button click
+		sidebarToggle.addEventListener('click', function(e) {
+			e.preventDefault();
+			sidebar.classList.toggle('active');
+			content.classList.toggle('active');
+		});
+		
+		// Close menu when clicking outside
+		document.addEventListener('click', function(e) {
+			if (window.innerWidth <= 768) {
+				if (!sidebar.contains(e.target) && e.target !== sidebarToggle) {
+					sidebar.classList.remove('active');
+					content.classList.remove('active');
+				}
+			}
+		});
+		
+		// Handle window resize
+		let resizeTimer;
+		window.addEventListener('resize', function() {
+			clearTimeout(resizeTimer);
+			resizeTimer = setTimeout(function() {
+				if (window.innerWidth > 768) {
+					sidebar.classList.remove('active');
+					content.classList.remove('active');
+				}
+			}, 250);
+		});
+	}
+}
+
+function initializeNotifications() {
+	const badges = document.querySelectorAll('.badge[data-count]');
+	badges.forEach(badge => {
+		const count = parseInt(badge.getAttribute('data-count'));
+		if (count > 0) {
+			badge.textContent = count > 99 ? '99+' : count;
+			badge.style.display = 'inline';
+		} else {
+			badge.style.display = 'none';
+		}
+	});
+}
+
+// Utility Functions
+function getUrlParameter(name) {
+	name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+	const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+	const results = regex.exec(location.search);
+	return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+}
+
+// Initialize Bootstrap components if available
+if (typeof bootstrap !== 'undefined') {
+	// Initialize tooltips
+	const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+	tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip));
+	
+	// Initialize popovers
+	const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
+	popovers.forEach(popover => new bootstrap.Popover(popover));
+}
+
+// Export utilities
+window.pfSense = {
+	getUrlParameter,
+	initializeMenuState,
+	initializeSubmenuToggles,
+	initializeMobileMenu,
+	initializeNotifications
+};

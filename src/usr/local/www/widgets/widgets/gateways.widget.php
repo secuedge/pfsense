@@ -239,23 +239,98 @@ $widgetkey_nodash = str_replace("-", "", $widgetkey);
 ?>
 
 <div class="table-responsive">
-	<table class="table table-striped table-hover table-condensed">
-		<thead>
-			<tr>
-				<th></th>
-				<th><?=gettext("Name")?></th>
-				<th>RTT</th>
-				<th>RTTsd</th>
-				<th><?=gettext("Loss")?></th>
-				<th><?=gettext("Status")?></th>
-			</tr>
-		</thead>
-		<tbody id="<?=htmlspecialchars($widgetkey)?>-gwtblbody">
-<?php
-		print(compose_table_body_contents($widgetkey));
-?>
-		</tbody>
-	</table>
+	<style>
+	.gateway-widget-card {
+		background: #fff;
+		border-radius: 8px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		padding: 1.5rem;
+		font-family: Inter, sans-serif;
+		font-size: 13px;
+		line-height: 20px;
+	}
+
+	.gateway-table {
+		width: 100%;
+		border-collapse: separate;
+		border-spacing: 0;
+	}
+
+	.gateway-table th {
+		text-align: left;
+		padding: 0.75rem;
+		border-bottom: 1px solid #e2e8f0;
+		font-weight: 500;
+		color: #4a5568;
+		font-size: 13px;
+		line-height: 20px;
+		background: #f5f8fa;
+	}
+
+	.gateway-table td {
+		padding: 1rem 0.75rem;
+		border-bottom: 1px solid #e2e8f0;
+		vertical-align: middle;
+		font-size: 13px;
+		line-height: 20px;
+		color: #4a5568;
+	}
+
+	.gateway-table tr:last-child td {
+		border-bottom: none;
+	}
+
+	.gateway-table tr:hover {
+		background-color: #f7fafc;
+	}
+
+	.gateway-status {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.gateway-status i {
+		font-size: 14px;
+	}
+
+	.bg-success {
+		background-color: #C6F6D5 !important;
+		color: #2F855A !important;
+	}
+
+	.bg-warning {
+		background-color: #FEEBC8 !important;
+		color: #C05621 !important;
+	}
+
+	.bg-danger {
+		background-color: #FED7D7 !important;
+		color: #C53030 !important;
+	}
+
+	.bg-info {
+		background-color: #E2E8F0 !important;
+		color: #4A5568 !important;
+	}
+	</style>
+	<div class="gateway-widget-card">
+		<table class="gateway-table">
+			<thead>
+				<tr>
+					<th></th>
+					<th><?=gettext("Name")?></th>
+					<th>RTT</th>
+					<th>RTTsd</th>
+					<th><?=gettext("Loss")?></th>
+					<th><?=gettext("Status")?></th>
+				</tr>
+			</thead>
+			<tbody id="<?=htmlspecialchars($widgetkey)?>-gwtblbody">
+			<?php print(compose_table_body_contents($widgetkey)); ?>
+			</tbody>
+		</table>
+	</div>
 </div>
 <!-- close the body we're wrapped in and add a configuration-panel -->
 </div><div id="<?=$widget_panel_footer_id?>" class="panel-footer collapse">

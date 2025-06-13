@@ -71,58 +71,302 @@ if ($_POST['widgetkey']) {
 }
 
 ?>
-<div class="table-responsive">
-	<table class="table table-striped table-hover table-condensed">
-		<thead>
-			<tr>
-				<th></th>
-				<th><?=gettext('Service')?></th>
-				<th><?=gettext('Description')?></th>
-				<th><?=gettext('Action')?></th>
-			</tr>
-		</thead>
-		<tbody>
-<?php
-$skipservices = explode(",", array_get_path($user_settings, "widgets/{$widgetkey}/filter", ''));
-
-if (count($services) > 0) {
-	uasort($services, "service_dispname_compare");
-	$service_is_displayed = false;
-
-	foreach ($services as $service) {
-		if ((!$service['dispname']) ||
-		    (in_array($service['dispname'], $skipservices)) ||
-		    (!get_service_status($service) &&
-		    !is_service_enabled($service['name']))) {
-			continue;
-		}
-
-		$service_is_displayed = true;
-
-		if (empty($service['description'])) {
-			$service['description'] = get_pkg_descr($service['name']);
-		}
-
-		$service_desc = explode(". ",$service['description']);
-?>
-			<tr>
-				<td><?=get_service_status_icon($service, false, true, false, "state")?></td>
-				<td><?=$service['dispname']?></td>
-				<td><?=$service_desc[0]?></td>
-				<td><?=get_service_control_links($service)?></td>
-			</tr>
-<?php
-	}
-
-	if (!$service_is_displayed) {
-		echo "<tr><td colspan=\"4\" class=\"text-center\">" . gettext("All services are hidden") . ". </td></tr>\n";
-	}
-} else {
-	echo "<tr><td colspan=\"4\" class=\"text-center\">" . gettext("No services found") . ". </td></tr>\n";
+<style>
+/* Container and base styles */
+.table-responsive {
+    position: relative;
+    padding: 1px;
+    border-radius: 16px;
+    background: linear-gradient(120deg, #2196f3, #1976D2);
 }
+
+.table-responsive::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: 16px;
+    background: linear-gradient(120deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+/* Table Base */
+.services-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 20px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Header Styles */
+.services-table thead th {
+    color: #1a237e;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: left;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(25, 118, 210, 0.1);
+    position: relative;
+}
+
+.services-table thead th::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 1.5rem;
+    right: 1.5rem;
+    height: 2px;
+    background: linear-gradient(90deg, #2196f3, transparent);
+}
+
+/* Row Styles */
+.services-table tbody tr {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.services-table tbody tr:hover {
+    background: rgba(33, 150, 243, 0.05);
+    transform: translateY(-2px) scale(1.002);
+    box-shadow: 0 4px 20px rgba(33, 150, 243, 0.15);
+    z-index: 1;
+}
+
+.services-table td {
+    padding: 1.5rem;
+    font-size: 13px;
+    line-height: 20px;
+    color: #2c3e50;
+    vertical-align: middle;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(25, 118, 210, 0.06);
+}
+
+/* Service Name */
+.service-name {
+    font-weight: 500;
+    color: #1976D2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Status Icons */
+.status-icon {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 12px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    transition: transform 0.3s ease;
+}
+
+.services-table tr:hover .status-icon {
+    transform: scale(1.1);
+}
+
+.status-icon.success {
+    background: #E8F5E9;
+    color: #00c853;
+    text-shadow: 0 0 10px rgba(0, 200, 83, 0.3);
+}
+
+.status-icon.error {
+    background: #FFEBEE;
+    color: #ff1744;
+    text-shadow: 0 0 10px rgba(255, 23, 68, 0.3);
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    color: #1976D2;
+    background: rgba(33, 150, 243, 0.1);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+}
+
+.action-btn:hover {
+    background: #1976D2;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(25, 118, 210, 0.25);
+}
+
+.action-btn:hover::before {
+    transform: translateX(100%);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+/* Empty State */
+.empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+    color: #546e7a;
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
+}
+
+/* Widget Title */
+.widget-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    color: #1a237e;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+.widget-heading i {
+    font-size: 16px;
+    color: #1976D2;
+    background: rgba(25, 118, 210, 0.1);
+    padding: 8px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.widget-heading:hover i {
+    transform: rotate(15deg);
+    background: rgba(25, 118, 210, 0.15);
+}
+
+/* Animation Keyframes */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Apply Animations */
+.services-table tbody tr {
+    animation: fadeIn 0.5s ease-out forwards;
+    animation-delay: calc(var(--row-index, 0) * 0.1s);
+    opacity: 0;
+}
+
+.status-icon.success {
+    animation: pulse 2s infinite;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .services-table td, 
+    .services-table th {
+        padding: 1rem;
+    }
+    
+    .action-buttons {
+        gap: 4px;
+    }
+    
+    .action-btn {
+        width: 32px;
+        height: 32px;
+    }
+}
+</style>
+
+<div class="table-responsive">
+    <table class="services-table">
+        <thead>
+            <tr>
+                <th><?=gettext("Service")?></th>
+                <th><?=gettext("Description")?></th>
+                <th><?=gettext("Actions")?></th>
+            </tr>
+        </thead>
+        <tbody>
+<?php
+$services = get_services();
+if (count($services) > 0):
+    $row_index = 0;
+    foreach ($services as $service):
+        if (!$service['name']) continue;
 ?>
-		</tbody>
-	</table>
+            <tr style="--row-index: <?=$row_index++?>;">
+                <td>
+                    <div class="service-name">
+                        <?php if ($service['status'] === true): ?>
+                            <span class="status-icon success">
+                                <i class="fas fa-check"></i>
+                            </span>
+                        <?php else: ?>
+                            <span class="status-icon error">
+                                <i class="fas fa-times"></i>
+                            </span>
+                        <?php endif; ?>
+                        <?=$service['name']?>
+                    </div>
+                </td>
+                <td><?=$service['description'] ?: get_pkg_descr($service['name'])?></td>
+                <td>
+                    <div class="action-buttons">
+                        <?=get_service_control_links($service)?>
+                    </div>
+                </td>
+            </tr>
+<?php
+    endforeach;
+else:
+?>
+            <tr>
+                <td colspan="3" class="empty-state"><?=gettext("No services found.")?></td>
+            </tr>
+<?php endif; ?>
+        </tbody>
+    </table>
 </div>
 <!-- close the body we're wrapped in and add a configuration-panel -->
 </div><div id="<?=$widget_panel_footer_id?>" class="panel-footer collapse">

@@ -267,57 +267,404 @@ $mobile = ipsec_dump_mobile();
 $widgetperiod = isset($config['widgets']['period']) ? $config['widgets']['period'] * 1000 : 10000;
 
 if (ipsec_enabled()): ?>
-<div id="<?=htmlspecialchars($widgetkey_nodash)?>-overview" style="display:<?=(($activetab == 'overview') ? 'block': 'none')?>;"  class="table-responsive">
-	<table class="table table-striped table-hover">
+<style>
+.ipsec-widget {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    font-family: Inter, sans-serif;
+    margin-bottom: 1.5rem;
+}
+
+.ipsec-widget:last-child {
+    margin-bottom: 0;
+}
+
+.ipsec-widget-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.ipsec-widget-title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #2d3748;
+    margin: 0;
+}
+
+.ipsec-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.ipsec-table th {
+    color: #4a5568;
+    font-weight: 500;
+    background: #f5f8fa;
+    padding: 0.75rem;
+    font-size: 13px;
+    line-height: 20px;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.ipsec-table td {
+    padding: 1rem 0.75rem;
+    font-size: 13px;
+    line-height: 20px;
+    color: #4a5568;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.ipsec-table tr:last-child td {
+    border-bottom: none;
+}
+
+.ipsec-table tr:hover {
+    background-color: #f7fafc;
+}
+
+.ipsec-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ipsec-status i {
+    font-size: 14px;
+}
+
+.ipsec-status i.fa-arrow-up {
+    color: #48BB78;
+}
+
+.ipsec-status i.fa-arrow-down {
+    color: #E53E3E;
+}
+
+.ipsec-status i.fa-spinner {
+    color: #ECC94B;
+}
+
+.ipsec-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ipsec-action button {
+    padding: 0.25rem 0.5rem;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #4a5568;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ipsec-action button:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+.ipsec-mobile-user {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ipsec-mobile-user.online {
+    background-color: #f0fff4;
+}
+
+.ipsec-mobile-user.offline {
+    background-color: #fff5f5;
+}
+
+.ipsec-mobile-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.ipsec-mobile-status i {
+    font-size: 14px;
+}
+
+.ipsec-mobile-status i.fa-check {
+    color: #48BB78;
+}
+
+.ipsec-empty {
+    text-align: center;
+    padding: 2rem;
+    color: #718096;
+    font-style: italic;
+}
+
+.ipsec-address {
+    font-family: "Inter Mono", monospace;
+    font-size: 12px;
+    color: #4a5568;
+}
+
+.ipsec-description {
+    font-size: 13px;
+    color: #2d3748;
+    font-weight: 500;
+}
+</style>
+
+<div id="<?=htmlspecialchars($widgetkey)?>-ipsec-mainpanel" class="content">
+    <div class="ipsec-widget">
+        <div class="ipsec-widget-header">
+            <h3 class="ipsec-widget-title"><?=gettext("IPsec Status")?></h3>
+        </div>
+        <div class="table-responsive">
+            <table class="ipsec-table" data-sortable>
 		<thead>
 		<tr>
-			<th><?= htmlspecialchars(gettext("P1 Active/Total")) ?></th>
-			<th><?= htmlspecialchars(gettext("P2 Active/Total")) ?></th>
-			<th><?= htmlspecialchars(gettext("Mobile Active/Total")) ?></th>
+                        <th><?=gettext("Phase 1")?></th>
+                        <th><?=gettext("Phase 2")?></th>
+                        <th><?=gettext("Mobile")?></th>
 		</tr>
 		</thead>
 		<tbody>
-			<tr><td colspan="5"><?= htmlspecialchars(gettext("Retrieving overview data")) ?> <i class="fa fa-cog fa-spin"></i></td></tr>
+                    <?php
+                    if (ipsec_enabled() && get_service_status(array('name' => 'ipsec'))) {
+                        $cmap = ipsec_status();
+                        $mobile = ipsec_dump_mobile();
+                    } else {
+                        $cmap = array();
+                    }
+
+                    $mobileactive = 0;
+                    $mobileinactive = 0;
+                    if (is_array($mobile['pool'])) {
+                        foreach ($mobile['pool'] as $pool) {
+                            $mobileactive += $pool['online'];
+                            $mobileinactive += $pool['offline'];
+                        }
+                    }
+                    ?>
+                    <tr>
+                        <td>
+                            <?php if (!empty($cmap) && is_array($cmap['connected']['p1']) && is_array($cmap['disconnected']['p1'])): ?>
+                                <span class="ipsec-status">
+                                    <i class="fa fa-arrow-up"></i>
+                                    <?=count($cmap['connected']['p1'])?> / <?=count($cmap['connected']['p1']) + count($cmap['disconnected']['p1'])?>
+                                </span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if (!empty($cmap) && is_array($cmap['connected']['p2']) && is_array($cmap['disconnected']['p2'])): ?>
+                                <span class="ipsec-status">
+                                    <i class="fa fa-arrow-up"></i>
+                                    <?=count($cmap['connected']['p2'])?> / <?=count($cmap['connected']['p2']) + count($cmap['disconnected']['p2'])?>
+                                </span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <span class="ipsec-status">
+                                <i class="fa fa-arrow-up"></i>
+                                <?=$mobileactive?> / <?=$mobileactive + $mobileinactive?>
+                            </span>
+                        </td>
+                    </tr>
 		</tbody>
 	</table>
 </div>
-<div class="table-responsive" id="<?=htmlspecialchars($widgetkey_nodash)?>-tunnel" style="display:<?=(($activetab == 'tunnel') ? 'block': 'none')?>;">
-	<table class="table table-striped table-hover">
+    </div>
+
+    <div class="ipsec-widget">
+        <div class="ipsec-widget-header">
+            <h3 class="ipsec-widget-title"><?=gettext("Tunnels")?></h3>
+        </div>
+        <div class="table-responsive">
+            <table class="ipsec-table" data-sortable>
 	<thead>
 	<tr>
-		<th colspan="2"><?= htmlspecialchars(gettext("Source")) ?></th>
-		<th colspan="2"><?= htmlspecialchars(gettext("Destination")) ?></th>
-		<th colspan="2"><?= htmlspecialchars(gettext("Description")) ?></th>
-		<th colspan="2"><?= htmlspecialchars(gettext("Status")) ?></th>
+                        <th><?=gettext("Source")?></th>
+                        <th><?=gettext("Destination")?></th>
+                        <th><?=gettext("Description")?></th>
+                        <th><?=gettext("Status")?></th>
 	</tr>
 	</thead>
 	<tbody>
-		<tr><td colspan="4"><?= htmlspecialchars(gettext("Retrieving tunnel data"))?> <i class="fa fa-cog fa-spin"></i></td></tr>
+                    <?php
+                    $gateways_status = return_gateways_status(true);
+                    foreach ($cmap as $k => $tunnel):
+                        if (in_array($k, array('connected', 'disconnected')) ||
+                            (!array_key_exists('p1', $tunnel) ||
+                            isset($tunnel['p1']['disabled'])) ||
+                            isset($tunnel['p1']['mobile'])) {
+                            continue;
+                        }
+
+                        $p1src = ipsec_get_phase1_src($tunnel['p1'], $gateways_status);
+                        if (empty($p1src)) {
+                            $p1src = gettext("Unknown");
+                        } else {
+                            $p1src = str_replace(',', ', ', $p1src);
+                        }
+                        $p1dst = ipsec_get_phase1_dst($tunnel['p1']);
+                        $p1conid = ipsec_conid($tunnel['p1'], null);
+
+                        if (is_array($tunnel['status'])) {
+                            $tstatus = array_pop($tunnel['status']);
+                        } else {
+                            $tstatus = array('state' => 'DISCONNECTED');
+                        }
+
+                        switch ($tstatus['state']) {
+                            case 'ESTABLISHED':
+                                $statusicon = 'arrow-up';
+                                $iconcolor = 'success';
+                                $icontitle = gettext('Connected');
+                                $buttonaction = 'disconnect';
+                                $buttontarget = 'ike';
+                                break;
+                            case 'CONNECTING':
+                                $statusicon = 'spinner fa-spin';
+                                $iconcolor = 'warning';
+                                $icontitle = gettext('Connecting');
+                                $buttonaction = 'disconnect';
+                                $buttontarget = 'ike';
+                                break;
+                            default:
+                                $statusicon = 'arrow-down';
+                                $iconcolor = 'danger';
+                                $icontitle = gettext('Disconnected');
+                                $buttonaction = 'connect';
+                                $buttontarget = 'all';
+                                break;
+                        }
+                    ?>
+                    <tr>
+                        <td class="ipsec-address"><?=htmlspecialchars($p1src)?></td>
+                        <td class="ipsec-address"><?=htmlspecialchars($p1dst)?></td>
+                        <td class="ipsec-description"><?=htmlspecialchars($tunnel['p1']['descr'])?></td>
+                        <td>
+                            <div class="ipsec-status">
+                                <i class="fa fa-<?=$statusicon?> text-<?=$iconcolor?>" title="<?=$icontitle?>"></i>
+                                <?=ipsec_status_button('ajax', $buttonaction, $buttontarget, $p1conid, null, false)?>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php
+                        if (is_array($tunnel['p2'])) {
+                            foreach ($tunnel['p2'] as $p2) {
+                                if (isset($p2['mobile']) || isset($ph2['disabled'])) {
+                                    continue;
+                                }
+                                $p2src = ipsec_idinfo_to_text($p2['localid']);
+                                $p2dst = ipsec_idinfo_to_text($p2['remoteid']);
+
+                                if ($tunnel['p1']['iketype'] == 'ikev2' && !isset($tunnel['p1']['splitconn'])) {
+                                    $p2conid = ipsec_conid($tunnel['p1']);
+                                } else {
+                                    $p2conid = ipsec_conid($tunnel['p1'], $p2);
+                                }
+
+                                if (isset($p2['connected'])) {
+                                    $statusicon = 'arrow-up';
+                                    $iconcolor = 'success';
+                                    $icontitle = gettext('Connected');
+                                    $buttonaction = 'disconnect';
+                                    $buttontarget = 'child';
+                                } else {
+                                    $statusicon = 'arrow-down';
+                                    $iconcolor = 'danger';
+                                    $icontitle = gettext('Disconnected');
+                                    $buttonaction = 'connect';
+                                    $buttontarget = 'child';
+                                }
+                    ?>
+                    <tr>
+                        <td class="ipsec-address"><?=htmlspecialchars($p2src)?></td>
+                        <td class="ipsec-address"><?=htmlspecialchars($p2dst)?></td>
+                        <td class="ipsec-description"><?=htmlspecialchars($p2['descr'])?></td>
+                        <td>
+                            <div class="ipsec-status">
+                                <i class="fa fa-<?=$statusicon?> text-<?=$iconcolor?>" title="<?=$icontitle?>"></i>
+                                <?=ipsec_status_button('ajax', $buttonaction, $buttontarget, $p2conid, null, false)?>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php
+                            }
+                        }
+                    endforeach;
+                    ?>
 	</tbody>
 	</table>
+        </div>
 </div>
 
-	<div id="<?=htmlspecialchars($widgetkey_nodash)?>-mobile" style="display:<?=(($activetab == 'mobile') ? 'block': 'none')?>;" class="table-responsive">
-		<table class="table table-striped table-hover">
-<?php if (is_array($mobile['pool'])): ?>
+    <div class="ipsec-widget">
+        <div class="ipsec-widget-header">
+            <h3 class="ipsec-widget-title"><?=gettext("Mobile Users")?></h3>
+        </div>
+        <div class="table-responsive">
+            <table class="ipsec-table" data-sortable>
 		<thead>
 		<tr>
-			<th><?= htmlspecialchars(gettext("User")) ?></th>
-			<th><?= htmlspecialchars(gettext("IP")) ?></th>
-			<th><?= htmlspecialchars(gettext("Status")) ?></th>
+                        <th><?=gettext("ID")?></th>
+                        <th><?=gettext("Host")?></th>
+                        <th><?=gettext("Status")?></th>
 		</tr>
 		</thead>
 		<tbody>
-			<tr><td colspan="3"><?= htmlspecialchars(gettext("Retrieving mobile data")) ?> <i class="fa fa-cog fa-spin"></i></td></tr>
-		</tbody>
-<?php else:?>
-		<thead>
-			<tr>
-				<th colspan="3" class="text-danger"><?=htmlspecialchars(gettext("No mobile tunnels have been configured")) ?></th>
+                    <?php
+                    if (is_array($mobile['pool'])) {
+                        $mucount = 0;
+                        foreach ($mobile['pool'] as $pool) {
+                            if (!is_array($pool['lease'])) {
+                                continue;
+                            }
+                            if(is_array($pool['lease']) && !empty($pool['lease'])){
+                                foreach ($pool['lease'] as $muser) {
+                                    $mucount++;
+                    ?>
+                    <tr class="ipsec-mobile-user <?=$muser['status'] == 'online' ? 'online' : 'offline'?>">
+                        <td><?=htmlspecialchars($muser['id'])?></td>
+                        <td><?=htmlspecialchars($muser['host'])?></td>
+                        <td>
+                            <div class="ipsec-mobile-status">
+                                <?php if ($muser['status'] == 'online'): ?>
+                                    <i class="fa fa-check"></i>
+                                <?php endif; ?>
+                                <span><?=htmlspecialchars($muser['status'])?></span>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php
+                                }
+                            }
+                        }
+                        if ($mucount == 0) {
+                    ?>
+                    <tr>
+                        <td colspan="3" class="ipsec-empty"><?=gettext("No mobile leases")?></td>
+                    </tr>
+                    <?php
+                        }
+                    } else {
+                    ?>
+                    <tr>
+                        <td colspan="3" class="ipsec-empty"><?=gettext("No mobile pools configured")?></td>
 			</tr>
-		</thead>
-<?php endif;?>
+                    <?php
+                    }
+                    ?>
+                </tbody>
 		</table>
+        </div>
+    </div>
 	</div>
 
 <?php else: ?>

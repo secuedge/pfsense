@@ -46,7 +46,6 @@ ob_start(null, "1000");
 require_once('guiconfig.inc');
 require_once('functions.inc');
 require_once('notices.inc');
-require_once("pkg-utils.inc");
 
 if (isset($_POST['closenotice'])) {
 	close_notice($_POST['closenotice']);
@@ -101,29 +100,39 @@ foreach (glob("/usr/local/www/widgets/widgets/*.widget.php") as $file) {
 	);
 }
 
+// Register the new interface summary widget
+$available_widgets[] = array(
+	'name' => 'interface_summary',
+	'file' => 'interface_summary.widget.php',
+	'title' => 'Interface Summary',
+	'description' => 'Shows a real-time pie chart and table of firewall log interface summary.'
+);
+
 ##if no config entry found, initialize config entry
 if (!is_array($config['widgets'])) {
 	config_set_path('widgets', array());
 }
 
 if (!is_array($user_settings['widgets'])) {
+	// Set default widgets if user has no custom widgets
 	$user_settings['widgets'] = array();
+	$user_settings['widgets']['sequence'] = 'analytics-0:col1:open:0,system_information-0:col1:open:0,traffic_graphs-0:col1:open:0';
 }
 
 if ($_POST && $_POST['sequence']) {
-
 	// Start with the user's widget settings.
 	$widget_settings = $user_settings['widgets'];
 
 	$widget_sep = ',';
 	$widget_seq_array = explode($widget_sep, rtrim($_POST['sequence'], $widget_sep));
 	$widget_counter_array = array();
+	$widget_sequence = '';
 	$widget_sep = '';
 
-	// Make a record of the counter of each widget that is in use.
+	// First pass: Record existing widgets and their positions
 	foreach ($widget_seq_array as $widget_seq_data) {
 		list($basename, $col, $display, $widget_counter) = explode(':', $widget_seq_data);
-
+		
 		if ($widget_counter != 'next') {
 			if (!is_numeric($widget_counter)) {
 				continue;
@@ -134,24 +143,17 @@ if ($_POST && $_POST['sequence']) {
 		}
 	}
 
-	// Find any new entry (and do not assume there is only 1 new entry)
+	// Second pass: Handle new widgets
 	foreach ($widget_seq_array as $widget_seq_data) {
 		list($basename, $col, $display, $widget_counter) = explode(':', $widget_seq_data);
-
+		
 		if ($widget_counter == 'next') {
-			// Construct the widget counter of the new widget instance by finding
-			// the first non-negative integer that is not in use.
-			// The reasoning here is that if you just deleted a widget instance,
-			// e.g. had System Information 0,1,2 and deleted 1,
-			// then when you add System Information again it will become instance 1,
-			// which will bring back whatever filter selections happened to be on
-			// the previous instance 1.
+			// Find the next available counter for this widget type
 			$instance_num = 0;
-
 			while (isset($widget_counter_array[$basename][$instance_num])) {
 				$instance_num++;
 			}
-
+			
 			$widget_sequence .= $widget_sep . $basename . ':' . $col . ':' . $display . ':' . $instance_num;
 			$widget_counter_array[$basename][$instance_num] = true;
 			$widget_sep = ',';
@@ -160,10 +162,11 @@ if ($_POST && $_POST['sequence']) {
 
 	$widget_settings['sequence'] = $widget_sequence;
 
+	// Save widget-specific configurations
 	foreach ($widget_counter_array as $basename => $instances) {
 		foreach ($instances as $instance => $value) {
 			$widgetconfigname = $basename . '-' . $instance . '-config';
-			if ($_POST[$widgetconfigname]) {
+			if (isset($_POST[$widgetconfigname])) {
 				$widget_settings[$widgetconfigname] = $_POST[$widgetconfigname];
 			}
 		}
@@ -253,7 +256,21 @@ if ($user_settings['widgets']['sequence'] != "") {
 		if (false !== $offset) {
 			$basename = substr($basename, 0, $offset);
 		}
+		
+		// Generate a unique widget key
 		$widgetkey = $basename . '-' . $copynum;
+		
+		// Check if this widget already exists
+		if (isset($widgetsfromconfig[$widgetkey])) {
+			// Find the next available copy number
+			$newcopynum = $copynum;
+			do {
+				$newcopynum++;
+				$newkey = $basename . '-' . $newcopynum;
+			} while (isset($widgetsfromconfig[$newkey]));
+			
+			$widgetkey = $newkey;
+		}
 
 		if (isset($user_settings['widgets'][$widgetkey]['descr'])) {
 			$widgettitle = htmlentities($user_settings['widgets'][$widgetkey]['descr']);
@@ -272,7 +289,7 @@ if ($user_settings['widgets']['sequence'] != "") {
 			'title' => $widgettitle,
 			'col' => $col,
 			'display' => $display,
-			'copynum' => $copynum,
+			'copynum' => isset($newcopynum) ? $newcopynum : $copynum,
 			'multicopy' => ${$basename . '_allow_multiple_widget_copies'}
 		);
 
@@ -310,42 +327,82 @@ if ($savemsg) {
 	print_info_box($savemsg, $class);
 }
 
-pfSense_handle_custom_code("/usr/local/pkg/dashboard/pre_dashboard");
-
 ?>
-
-<div class="panel panel-default collapse <?=$panel_state?>" id="widget-available">
-	<div class="panel-heading">
-		<h2 class="panel-title"><?=gettext("Available Widgets"); ?>
-			<span class="widget-heading-icon">
-				<a data-toggle="collapse" href="#widget-available_panel-body" id="widgets-available">
-					<i class="fa fa-plus-circle"></i>
-				</a>
-			</span>
-		</h2>
-	</div>
-	<div id="widget-available_panel-body" class="panel-body collapse <?=$panel_body_state?>">
-		<div class="content">
-			<div class="row">
-<?php
-
-// Build the Available Widgets table using a sorted copy of the $known_widgets array
-$available = $known_widgets;
-uasort($available, function($a, $b){ return strcasecmp($a['title'], $b['title']); });
-
-foreach ($available as $widgetconfig):
-	// If the widget supports multiple copies, or no copies are displayed yet, then it is available to add
-	if (($widgetconfig['multicopy']) || ($widgetconfig['display'] == 'none')):
-?>
-		<div class="col-sm-3"><a href="#" id="btnadd-<?=$widgetconfig['basename']?>"><i class="fa fa-plus"></i> <?=$widgetconfig['title']?></a></div>
-	<?php endif; ?>
-<?php
-endforeach;
-?>
-			</div>
-<p style="text-align:center"><?=sprintf(gettext('Other dashboard settings are available from the <a href="%s">General Setup</a> page.'), '/system.php')?></p>
-		</div>
-	</div>
+<style>
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
+}
+.dashboard-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 16px rgba(25, 118, 210, 0.07);
+  padding: 2rem 2.5rem;
+  margin-bottom: 0;
+  min-width: 0;
+}
+.dashboard-card h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1976D2;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+  .dashboard-card {
+    padding: 1.2rem 1rem;
+  }
+}
+</style>
+<div class="dashboard-grid">
+    <div class="dashboard-card">
+        <h2><i class="fas fa-server"></i> System Information</h2>
+        <?php include('/usr/local/www/widgets/widgets/system_information.widget.php'); ?>
+    </div>
+    <div class="dashboard-card">
+        <h2><i class="fas fa-chart-line"></i> Traffic Graphs</h2>
+        <?php include('/usr/local/www/widgets/widgets/traffic_graphs.widget.php'); ?>
+    </div>
+    <div class="dashboard-card">
+        <h2><i class="fas fa-cogs"></i> Services Status</h2>
+        <?php include('/usr/local/www/widgets/widgets/services_status.widget.php'); ?>
+    </div>
+	<div class="dashboard-card">
+        <h2><i class="fas fa-file-alt"></i> Log</h2>
+        <?php include('/usr/local/www/widgets/widgets/log.widget.php'); ?>
+    </div>
+    <div class="dashboard-card">
+        <h2><i class="fas fa-lock"></i> OpenVPN</h2>
+        <?php include('/usr/local/www/widgets/widgets/openvpn.widget.php'); ?>
+    </div>
+    <div class="dashboard-card">
+        <h2><i class="fas fa-shield-alt"></i> IPsec</h2>
+        <?php include('/usr/local/www/widgets/widgets/ipsec.widget.php'); ?>
+    </div>
+    <div class="dashboard-card">
+        <h2><i class="fas fa-network-wired"></i> Interfaces</h2>
+        <?php include('/usr/local/www/widgets/widgets/interfaces.widget.php'); ?>
+    </div>
+    <div class="dashboard-card">
+        <h2><i class="fas fa-route"></i> Gateways</h2>
+        <?php include('/usr/local/www/widgets/widgets/gateways.widget.php'); ?>
+    </div>
+    <div class="dashboard-card">
+        <h2><i class="fas fa-project-diagram"></i> CARP Status</h2>
+        <?php include('/usr/local/www/widgets/widgets/carp_status.widget.php'); ?>
+    </div>
+    <div class="dashboard-card">
+        <h2><i class="fas fa-user-lock"></i> Captive Portal Status</h2>
+        <?php include('/usr/local/www/widgets/widgets/captive_portal_status.widget.php'); ?>
+    </div>
 </div>
 
 <div class="hidden" id="widgetSequence">
@@ -355,113 +412,11 @@ endforeach;
 </div>
 
 <?php
-$widgetColumns = array();
-foreach ($widgets as $widgetkey => $widgetconfig) {
-	if ($widgetconfig['display'] != 'none' && file_exists("/usr/local/www/widgets/widgets/{$widgetconfig['basename']}.widget.php")) {
-		if (!isset($widgetColumns[$widgetconfig['col']])) {
-			$widgetColumns[$widgetconfig['col']] = array();
-		}
-		$widgetColumns[$widgetconfig['col']][$widgetkey] = $widgetconfig;
-	}
-}
-?>
-
-<div class="row">
-<?php
-	$columnWidth = (int) (12 / $numColumns);
-
-	for ($currentColumnNumber = 1; $currentColumnNumber <= $numColumns; $currentColumnNumber++) {
-
-
-		//if col$currentColumnNumber exists
-		if (isset($widgetColumns['col'.$currentColumnNumber])) {
-			echo '<div class="col-md-' . $columnWidth . '" id="widgets-col' . $currentColumnNumber . '">';
-			$columnWidgets = $widgetColumns['col'.$currentColumnNumber];
-
-			foreach ($columnWidgets as $widgetkey => $widgetconfig) {
-				// Construct some standard names for the ids this widget will use for its commonly-used elements.
-				// Included widget.php code can rely on and use these, so the format does not have to be repeated in every widget.php
-				$widget_panel_body_id = 'widget-' . $widgetkey . '_panel-body';
-				$widget_panel_footer_id = 'widget-' . $widgetkey . '_panel-footer';
-				$widget_showallnone_id = 'widget-' . $widgetkey . '_showallnone';
-
-				// Compose the widget title and include the title link if available
-				$widgetlink = ${$widgetconfig['basename'] . '_title_link'};
-
-				if ((strlen($widgetlink) > 0)) {
-					$wtitle = '<a href="' . $widgetlink . '"> ' . $widgetconfig['title'] . '</a>';
-				} else {
-					$wtitle = $widgetconfig['title'];
-				}
-				?>
-				<div class="panel panel-default" id="widget-<?=$widgetkey?>">
-					<div class="panel-heading">
-						<h2 class="panel-title">
-							<?=$wtitle?>
-							<span class="widget-heading-icon">
-								<a data-toggle="collapse" href="#<?=$widget_panel_footer_id?>" class="config hidden">
-									<i class="fa fa-wrench"></i>
-								</a>
-								<a data-toggle="collapse" href="#<?=$widget_panel_body_id?>">
-									<!--  actual icon is determined in css based on state of body -->
-									<i class="fa fa-plus-circle"></i>
-								</a>
-								<a data-toggle="close" href="#widget-<?=$widgetkey?>">
-									<i class="fa fa-times-circle"></i>
-								</a>
-							</span>
-						</h2>
-					</div>
-					<div id="<?=$widget_panel_body_id?>" class="panel-body collapse<?=($widgetconfig['display'] == 'close' ? '' : ' in')?>">
-						<?php
-							// For backward compatibility, included *.widget.php code needs the var $widgetname
-							$widgetname = $widgetkey;
-							// Determine if this is the first instance of this particular widget.
-							// Provide the $widget_first_instance var, to make it easy for the included widget code
-							// to be able to know if it is being included for the first time.
-							if ($widgets_found[$widgetconfig['basename']]) {
-								$widget_first_instance = false;
-							} else {
-								$widget_first_instance = true;
-								$widgets_found[$widgetconfig['basename']] = true;
-							}
-							include('/usr/local/www/widgets/widgets/' . $widgetconfig['basename'] . '.widget.php');
-						?>
-					</div>
-				</div>
-				<?php
-			}
-			echo "</div>";
-		} else {
-			echo '<div class="col-md-' . $columnWidth . '" id="widgets-col' . $currentColumnNumber . '"></div>';
-		}
-
-	}
-?>
-
-</div>
-
-<?php
-/*
- * Import the modal form used to display the copyright/usage information
- * when trigger file exists. Trigger file is created during upgrade process
- * when /etc/version changes
- */
-require_once("copyget.inc");
-
-if (file_exists("{$g['cf_conf_path']}/copynotice_display")) {
-	require_once("copynotice.inc");
-	@unlink("{$g['cf_conf_path']}/copynotice_display");
-}
-
 /*
  * Import the modal form used to display any HTML text a package may want to display
  * on installation or removal
  */
-$ui_notice = "/tmp/package_ui_notice";
-if (file_exists($ui_notice)) {
-	require_once("{$g['www_path']}/upgrnotice.inc");
-}
+
 ?>
 
 <script type="text/javascript">
@@ -470,30 +425,66 @@ if (file_exists($ui_notice)) {
 dirty = false;
 function updateWidgets(newWidget) {
 	var sequence = '';
-
-	$('.container .col-md-<?=$columnWidth?>').each(function(idx, col) {
-		$('.panel', col).each(function(idx, widget) {
-			var isOpen = $('.panel-body', widget).hasClass('in');
-			var widget_basename = widget.id.split('-')[1];
-
-			// Only save details for panels that have id's like 'widget-*'
-			// Some widgets create other panels, so ignore any of those.
-			if ((widget.id.split('-')[0] == 'widget') && (typeof widget_basename !== 'undefined')) {
-				sequence += widget_basename + ':' + col.id.split('-')[1] + ':' + (isOpen ? 'open' : 'close') + ':' + widget.id.split('-')[2] + ',';
+	var sep = '';
+	var widgetCounters = {};
+	
+	// First, collect all existing widgets and their counters
+	$('.panel').each(function() {
+		var widgetId = $(this).attr('id');
+		if (widgetId) {
+			var parts = widgetId.split('-');
+			if (parts.length >= 2) {
+				var basename = parts[0];
+				var counter = parseInt(parts[1]);
+				if (!isNaN(counter)) {
+					if (!widgetCounters[basename]) {
+						widgetCounters[basename] = [];
+					}
+					widgetCounters[basename].push(counter);
+				}
 			}
-		});
+		}
 	});
-
-	if (typeof newWidget !== 'undefined') {
-		// The system_information widget is always added to column one. Others go in column two
-		if (newWidget == "system_information") {
-			sequence += newWidget.split('-')[0] + ':' + 'col1:open:next';
-		} else {
-			sequence += newWidget.split('-')[0] + ':' + 'col2:open:next';
+	
+	// Build sequence for existing widgets
+	$('.panel').each(function() {
+		var widgetId = $(this).attr('id');
+		if (widgetId) {
+			var parts = widgetId.split('-');
+			if (parts.length >= 2) {
+				var basename = parts[0];
+				var counter = parseInt(parts[1]);
+				if (!isNaN(counter)) {
+					var col = $(this).closest('.col-sm-6').index() + 1;
+					var display = $(this).hasClass('panel-collapsed') ? 'closed' : 'open';
+					sequence += sep + basename + ':' + col + ':' + display + ':' + counter;
+					sep = ',';
+				}
+			}
+		}
+	});
+	
+	// Add new widget if provided
+	if (newWidget) {
+		var parts = newWidget.split('-');
+		if (parts.length >= 2) {
+			var basename = parts[0];
+			var counter = 0;
+			
+			// Find the next available counter for this widget type
+			if (widgetCounters[basename]) {
+				while (widgetCounters[basename].includes(counter)) {
+					counter++;
+				}
+			}
+			
+			// Add new widget to sequence
+			var col = (basename === 'system_information') ? 1 : 2;
+			sequence += sep + basename + ':' + col + ':open:' + counter;
 		}
 	}
-
-	$('input[name=sequence]', $('#widgetSequence_form')).val(sequence);
+	
+	$('#sequence').val(sequence);
 }
 
 // Determine if all the checkboxes are checked
@@ -557,124 +548,194 @@ function register_ajax(ws) {
 // ---------------------------------------------------------------------------------------------------
 
 events.push(function() {
-	// Make panels destroyable
-	$('.container .panel-heading a[data-toggle="close"]').each(function (idx, el) {
-		$(el).on('click', function(e) {
-			$(el).parents('.panel').remove();
-			updateWidgets();
-			// Submit the form save/display all selected widgets
-			$('[name=widgetForm]').submit();
-		})
-	});
+    // Initialize menu expansion
+    $('.nav-main > li > a').on('click', function(e) {
+        var $this = $(this);
+        var $parent = $this.parent();
+        var $submenu = $parent.find('> ul');
+        
+        if ($submenu.length) {
+            e.preventDefault();
+            
+            // Close other open menus
+            $('.nav-main > li').not($parent).removeClass('active');
+            $('.nav-main > li > ul').not($submenu).slideUp(200);
+            
+            // Toggle current menu
+            $parent.toggleClass('active');
+            $submenu.slideToggle(200);
+        }
+    });
 
-	// Make panels sortable
-	$('.container .col-md-<?=$columnWidth?>').sortable({
-		handle: '.panel-heading',
-		cursor: 'grabbing',
-		connectWith: '.container .col-md-<?=$columnWidth?>',
-		update: function(){
-			dirty = true;
-			$('#btnstore').removeClass('invisible');
-		}
-	});
+    // Initialize widget tracking
+    var widgetCounter = {};
+    var widgetSequence = [];
 
-	// On clicking a widget to install . .
-	$('[id^=btnadd-]').click(function(event) {
-		// Add the widget name to the list of displayed widgets
-		updateWidgets(this.id.replace('btnadd-', ''));
+    // Initialize existing widgets
+    $('.container .col-md-<?=$columnWidth?>').each(function(idx, col) {
+        $('.panel', col).each(function(idx, widget) {
+            var widget_basename = widget.id.split('-')[1];
+            var widget_counter = parseInt(widget.id.split('-')[2]);
+            
+            if (widget_basename && !isNaN(widget_counter)) {
+                if (!widgetCounter[widget_basename]) {
+                    widgetCounter[widget_basename] = [];
+                }
+                widgetCounter[widget_basename].push(widget_counter);
+                
+                // Add to sequence
+                widgetSequence.push({
+                    basename: widget_basename,
+                    counter: widget_counter,
+                    column: col.id.split('-')[1],
+                    display: $('.panel-body', widget).hasClass('in') ? 'open' : 'close'
+                });
+            }
+        });
+    });
 
-		// Submit the form save/display all selected widgets
-		$('[name=widgetForm]').submit();
-	});
+    // Make panels destroyable
+    $('.container .panel-heading a[data-toggle="close"]').each(function (idx, el) {
+        $(el).on('click', function(e) {
+            var widget = $(el).parents('.panel');
+            var widget_basename = widget.attr('id').split('-')[1];
+            var widget_counter = parseInt(widget.attr('id').split('-')[2]);
+            
+            // Remove from counter tracking
+            if (widgetCounter[widget_basename]) {
+                widgetCounter[widget_basename] = widgetCounter[widget_basename].filter(c => c !== widget_counter);
+            }
+            
+            widget.remove();
+            updateWidgets();
+            $('[name=widgetForm]').submit();
+        });
+    });
 
+    // Make panels sortable
+    $('.container .col-md-<?=$columnWidth?>').sortable({
+        handle: '.panel-heading',
+        cursor: 'grabbing',
+        connectWith: '.container .col-md-<?=$columnWidth?>',
+        update: function(event, ui){
+            dirty = true;
+            $('#btnstore').removeClass('invisible');
+            updateWidgets();
+        }
+    });
 
-	$('#btnstore').click(function() {
-		updateWidgets();
-		dirty = false;
-		$(this).addClass('invisible');
-		$('[name=widgetForm]').submit();
-	});
+    // Widget addition handler
+    $('[id^=btnadd-]').click(function(event) {
+        event.preventDefault();
+        var widgetName = this.id.replace('btnadd-', '');
+        
+        // Update widget counter tracking
+        if (!widgetCounter[widgetName]) {
+            widgetCounter[widgetName] = [];
+        }
+        
+        updateWidgets(widgetName);
+        $('[name=widgetForm]').submit();
+    });
 
-	// provide a warning message if the user tries to change page before saving
-	$(window).bind('beforeunload', function(){
-		if (dirty) {
-			return ("<?=gettext('One or more widgets have been moved but have not yet been saved')?>");
-		} else {
-			return undefined;
-		}
-	});
+    // Initialize widget counter on page load
+    $('.container .col-md-<?=$columnWidth?>').each(function(idx, col) {
+        $('.panel', col).each(function(idx, widget) {
+            var widgetName = widget.id.split('-')[1];
+            if (!widgetCounter[widgetName]) {
+                widgetCounter[widgetName] = 0;
+            }
+            widgetCounter[widgetName]++;
+        });
+    });
 
-	// Show the fa-save icon in the breadcrumb bar if the user opens or closes a panel (In case he/she wants to save the new state)
-	// (Sometimes this will cause us to see the icon when we don't need it, but better that than the other way round)
-	$('.panel').on('hidden.bs.collapse shown.bs.collapse', function (e) {
-	    if (e.currentTarget.id != 'widget-available') {
-			$('#btnstore').removeClass("invisible");
-		}
-	});
+    $('#btnstore').click(function() {
+        updateWidgets();
+        dirty = false;
+        $(this).addClass('invisible');
+        $('[name=widgetForm]').submit();
+    });
 
-	// --------------------- Centralized widget refresh system ------------------------------
-	ajaxtimeout = false;
+    // provide a warning message if the user tries to change page before saving
+    $(window).bind('beforeunload', function(){
+        if (dirty) {
+            return ("<?=gettext('One or more widgets have been moved but have not yet been saved')?>");
+        } else {
+            return undefined;
+        }
+    });
 
-	function make_ajax_call(wd) {
-		ajaxmutex = true;
+    // Show the fa-save icon in the breadcrumb bar if the user opens or closes a panel (In case he/she wants to save the new state)
+    // (Sometimes this will cause us to see the icon when we don't need it, but better that than the other way round)
+    $('.panel').on('hidden.bs.collapse shown.bs.collapse', function (e) {
+        if (e.currentTarget.id != 'widget-available') {
+            $('#btnstore').removeClass("invisible");
+        }
+    });
 
-		$.ajax({
-			type: 'POST',
-			url: wd.url,
-			dataType: 'html',
-			data: wd.parms,
+    // --------------------- Centralized widget refresh system ------------------------------
+    ajaxtimeout = false;
 
-			success: function(data){
-				if (data.length > 0 ) {
-					// If the session has timed out, display a pop-up
-					if (data.indexOf("SESSION_TIMEOUT") === -1) {
-						wd.callback(data);
-					} else {
-						if (ajaxtimeout === false) {
-							ajaxtimeout = true;
-							alert("<?=$timeoutmessage?>");
-						}
-					}
-				}
+    function make_ajax_call(wd) {
+        ajaxmutex = true;
 
-				ajaxmutex = false;
-			},
+        $.ajax({
+            type: 'POST',
+            url: wd.url,
+            dataType: 'html',
+            data: wd.parms,
 
-			error: function(e){
-//				alert("Error: " + e);
-				ajaxmutex = false;
-			}
-		});
-	}
+            success: function(data){
+                if (data.length > 0 ) {
+                    // If the session has timed out, display a pop-up
+                    if (data.indexOf("SESSION_TIMEOUT") === -1) {
+                        wd.callback(data);
+                    } else {
+                        if (ajaxtimeout === false) {
+                            ajaxtimeout = true;
+                            alert("<?=$timeoutmessage?>");
+                        }
+                    }
+                }
 
-	// Loop through each AJAX widget refresh object, make the AJAX call and pass the
-	// results back to the widget's callback function
-	function executewidget() {
-		if (ajaxspecs.length > 0) {
-			var freq = ajaxspecs[ajaxidx].freq;	// widget can specify it should be called freq times around the loop
+                ajaxmutex = false;
+            },
 
-			if (!ajaxmutex) {
-				if (((ajaxcntr % freq) === 0) && (typeof ajaxspecs[ajaxidx].callback === "function" )) {
-				    make_ajax_call(ajaxspecs[ajaxidx]);
-				}
+            error: function(e){
+    //                alert("Error: " + e);
+                ajaxmutex = false;
+            }
+        });
+    }
 
-			    if (++ajaxidx >= ajaxspecs.length) {
-					ajaxidx = 0;
+    // Loop through each AJAX widget refresh object, make the AJAX call and pass the
+    // results back to the widget's callback function
+    function executewidget() {
+        if (ajaxspecs.length > 0) {
+            var freq = ajaxspecs[ajaxidx].freq;	// widget can specify it should be called freq times around the loop
 
-					if (++ajaxcntr >= 4096) {
-						ajaxcntr = 0;
-					}
-			    }
-			}
+            if (!ajaxmutex) {
+                if (((ajaxcntr % freq) === 0) && (typeof ajaxspecs[ajaxidx].callback === "function" )) {
+                    make_ajax_call(ajaxspecs[ajaxidx]);
+                }
 
-		    setTimeout(function() { executewidget(); }, 1000);
-	  	}
-	}
+                if (++ajaxidx >= ajaxspecs.length) {
+                    ajaxidx = 0;
 
-	// Kick it off
-	executewidget();
+                    if (++ajaxcntr >= 4096) {
+                        ajaxcntr = 0;
+                    }
+                }
+            }
 
-	//----------------------------------------------------------------------------------------------------
+            setTimeout(function() { executewidget(); }, 1000);
+        }
+    }
+
+    // Kick it off
+    executewidget();
+
+    //----------------------------------------------------------------------------------------------------
 });
 //]]>
 </script>

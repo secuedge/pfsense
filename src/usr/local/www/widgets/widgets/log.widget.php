@@ -81,7 +81,7 @@ if ($_REQUEST['widgetkey']) {
 
 $iface_descr_arr = get_configured_interface_with_descr();
 
-$nentries = isset($user_settings['widgets'][$widgetkey]['filterlogentries']) ? $user_settings['widgets'][$widgetkey]['filterlogentries'] : 5;
+$nentries = isset($user_settings['widgets'][$widgetkey]['filterlogentries']) ? $user_settings['widgets'][$widgetkey]['filterlogentries'] : 8;
 
 //set variables for log
 $nentriesacts		= isset($user_settings['widgets'][$widgetkey]['filterlogentriesacts']) ? $user_settings['widgets'][$widgetkey]['filterlogentriesacts'] : 'All';
@@ -108,82 +108,305 @@ if (!$_REQUEST['ajax']) {
 //]]>
 </script>
 
-<?php } ?>
-
-<table class="table table-striped table-hover">
-	<thead>
-		<tr>
-			<th><?=gettext("Act");?></th>
-			<th><?=gettext("Time");?></th>
-			<th><?=gettext("IF");?></th>
-			<th><?=gettext("Source");?></th>
-			<th><?=gettext("Destination");?></th>
-		</tr>
-	</thead>
-	<tbody>
-<?php
-	foreach ($filterlog as $filterent):
-		if ($filterent['version'] == '6') {
-			$srcIP = "[" . htmlspecialchars($filterent['srcip']) . "]";
-			$dstIP = "[" . htmlspecialchars($filterent['dstip']) . "]";
-		} else {
-			$srcIP = htmlspecialchars($filterent['srcip']);
-			$dstIP = htmlspecialchars($filterent['dstip']);
-		}
-
-		if ($filterent['act'] == "block") {
-			$iconfn = "times text-danger";
-		} else if ($filterent['act'] == "reject") {
-			$iconfn = "hand-stop-o text-warning";
-		} else if ($filterent['act'] == "match") {
-			$iconfn = "filter";
-		} else {
-			$iconfn = "check text-success";
-		}
-
-		$rule = find_rule_by_number($filterent['rulenum'], $filterent['tracker'], $filterent['act']);
-
-		// Putting <wbr> tags after each ':'  allows the string to word-wrap at that point
-		$srcIP = str_replace(':', ':<wbr>', $srcIP);
-		$dstIP = str_replace(':', ':<wbr>', $dstIP);
-?>
-		<tr>
-			<td><i class="fa fa-<?=$iconfn?>" style="cursor: pointer;" onclick="javascript:getURL('status_logs_filter.php?getrulenum=<?php echo "{$filterent['rulenum']},{$filterent['tracker']},{$filterent['act']}"; ?>', outputrule);"
-			title="<?=gettext("Rule that triggered this action: ") . htmlspecialchars($rule)?>">
-			</a></td>
-			<td title="<?=htmlspecialchars($filterent['time'])?>"><?=substr(htmlspecialchars($filterent['time']),0,-3)?></td>
-			<td><?=htmlspecialchars($filterent['interface']);?></td>
-			<td><a href="diag_dns.php?host=<?=$filterent['srcip']?>"
-				title="<?=gettext("Reverse Resolve with DNS");?>"><?=$srcIP?></a>
-			</td>
-			<td><a href="diag_dns.php?host=<?=$filterent['dstip']?>"
-				title="<?=gettext("Reverse Resolve with DNS");?>"><?=$dstIP?></a><?php
-				if ($filterent['dstport']) {
-					print ':' . htmlspecialchars($filterent['dstport']);
-				}
-				?>
-			</td>
-		</tr>
-	<?php
-	endforeach;
-
-	if (count($filterlog) == 0) {
-		print '<tr class="text-nowrap"><td colspan=5 class="text-center">';
-		print gettext('No logs to display');
-		print '</td></tr>';
-	}
-?>
-
-	</tbody>
-</table>
-
-<?php
-
-/* for AJAX response, we only need the panel-body */
-if ($_REQUEST['ajax']) {
-	exit;
+<style>
+/* Container and base styles */
+.table-responsive {
+    position: relative;
+    padding: 1px;
+    border-radius: 16px;
+    background: linear-gradient(120deg, #2196f3, #1976D2);
 }
+
+.table-responsive::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: 16px;
+    background: linear-gradient(120deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+/* Table Base */
+.logs-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 20px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Header Styles */
+.logs-table thead th {
+    color: #1a237e;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: left;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(25, 118, 210, 0.1);
+    position: relative;
+}
+
+.logs-table thead th::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 1.5rem;
+    right: 1.5rem;
+    height: 2px;
+    background: linear-gradient(90deg, #2196f3, transparent);
+}
+
+/* Row Styles */
+.logs-table tbody tr {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.logs-table tbody tr:hover {
+    background: rgba(33, 150, 243, 0.05);
+    transform: translateY(-2px) scale(1.002);
+    box-shadow: 0 4px 20px rgba(33, 150, 243, 0.15);
+    z-index: 1;
+}
+
+.logs-table td {
+    padding: 1.5rem;
+    font-size: 13px;
+    line-height: 20px;
+    color: #2c3e50;
+    vertical-align: middle;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(25, 118, 210, 0.06);
+}
+
+/* Status Icons */
+.log-action {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 12px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    transition: transform 0.3s ease;
+}
+
+.logs-table tr:hover .log-action {
+    transform: scale(1.1);
+}
+
+.log-action.pass {
+    background: #E8F5E9;
+    color: #00c853;
+    text-shadow: 0 0 10px rgba(0, 200, 83, 0.3);
+}
+
+.log-action.block {
+    background: #FFEBEE;
+    color: #ff1744;
+    text-shadow: 0 0 10px rgba(255, 23, 68, 0.3);
+}
+
+.log-action.reject {
+    background: #FFF3E0;
+    color: #FF9100;
+    text-shadow: 0 0 10px rgba(255, 145, 0, 0.3);
+}
+
+/* Widget Title */
+.widget-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    color: #1a237e;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+.widget-heading i {
+    font-size: 16px;
+    color: #1976D2;
+    background: rgba(25, 118, 210, 0.1);
+    padding: 8px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.widget-heading:hover i {
+    transform: rotate(15deg);
+    background: rgba(25, 118, 210, 0.15);
+}
+
+/* Animation Keyframes */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Apply Animations */
+.logs-table tbody tr {
+    animation: fadeIn 0.5s ease-out forwards;
+    animation-delay: calc(var(--row-index, 0) * 0.1s);
+    opacity: 0;
+}
+
+/* Interface Name */
+.interface-name {
+    color: #1976D2;
+    font-weight: 500;
+    background: rgba(25, 118, 210, 0.1);
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.logs-table tr:hover .interface-name {
+    background: rgba(25, 118, 210, 0.15);
+}
+
+/* IP Addresses */
+.ip-address {
+    color: #2c3e50;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.ip-address:hover {
+    color: #1976D2;
+    background: rgba(25, 118, 210, 0.1);
+    text-decoration: none;
+}
+
+/* Empty State */
+.empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+    color: #546e7a;
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .logs-table td, 
+    .logs-table th {
+        padding: 1rem;
+    }
+}
+</style>
+
+<div class="table-responsive">
+    <table class="logs-table">
+        <thead>
+            <tr>
+                <th><?=gettext("Act")?></th>
+                <th><?=gettext("Time")?></th>
+                <th><?=gettext("IF")?></th>
+                <th><?=gettext("Source")?></th>
+                <th><?=gettext("Destination")?></th>
+            </tr>
+        </thead>
+        <tbody>
+<?php
+    foreach ($filterlog as $filterent):
+        if ($filterent['version'] == '6') {
+            $srcIP = "[" . htmlspecialchars($filterent['srcip']) . "]";
+            $dstIP = "[" . htmlspecialchars($filterent['dstip']) . "]";
+        } else {
+            $srcIP = htmlspecialchars($filterent['srcip']);
+            $dstIP = htmlspecialchars($filterent['dstip']);
+        }
+
+        if ($filterent['act'] == "block") {
+            $iconfn = "times text-danger";
+        } else if ($filterent['act'] == "reject") {
+            $iconfn = "hand-stop-o text-warning";
+        } else if ($filterent['act'] == "match") {
+            $iconfn = "filter";
+        } else {
+            $iconfn = "check text-success";
+        }
+
+        $rule = find_rule_by_number($filterent['rulenum'], $filterent['tracker'], $filterent['act']);
 ?>
+        <tr>
+            <td>
+                <?php if ($filterent['act'] == "block"): ?>
+                    <span class="log-action block">
+                        <i class="fa fa-times"></i>
+                    </span>
+                <?php elseif ($filterent['act'] == "reject"): ?>
+                    <span class="log-action reject">
+                        <i class="fa fa-hand-stop-o"></i>
+                    </span>
+                <?php elseif ($filterent['act'] == "match"): ?>
+                    <span class="log-action match">
+                        <i class="fa fa-filter"></i>
+                    </span>
+                <?php else: ?>
+                    <span class="log-action pass">
+                        <i class="fa fa-check"></i>
+                    </span>
+                <?php endif; ?>
+            </td>
+            <td><?=substr(htmlspecialchars($filterent['time']),0,-3)?></td>
+            <td class="interface-name"><?=htmlspecialchars($filterent['interface'])?></td>
+            <td>
+                <a href="diag_dns.php?host=<?=$filterent['srcip']?>" 
+                   class="ip-address" 
+                   title="<?=gettext("Reverse Resolve with DNS")?>">
+                    <?=$srcIP?>
+                </a>
+            </td>
+            <td>
+                <a href="diag_dns.php?host=<?=$filterent['dstip']?>" 
+                   class="ip-address" 
+                   title="<?=gettext("Reverse Resolve with DNS")?>">
+                    <?=$dstIP?><?php if ($filterent['dstport']) echo ':' . htmlspecialchars($filterent['dstport']); ?>
+                </a>
+            </td>
+        </tr>
+<?php
+    endforeach;
+
+    if (count($filterlog) == 0):
+?>
+        <tr>
+            <td colspan="5" class="empty-state">
+                <i class="fas fa-clipboard fa-2x mb-3" style="color: #B0BEC5; display: block; margin-bottom: 0.5rem;"></i>
+                <?=gettext("No logs to display")?>
+            </td>
+        </tr>
+<?php
+    endif;
+?>
+        </tbody>
+    </table>
+</div>
+
+<?php } ?>
 
 <script type="text/javascript">
 //<![CDATA[

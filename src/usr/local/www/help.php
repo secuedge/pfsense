@@ -52,18 +52,6 @@ if (empty($pagename)) {
 	if ($pagename == "index.php") {
 		$pagename = "";
 	}
-
-	/* If the filename is pkg_edit.php or wizard.php, reparse looking
-		for the .xml filename */
-	if (($pagename == "pkg.php") || ($pagename == "pkg_edit.php") || ($pagename == "wizard.php")) {
-		$param_split = explode('&', $uri_split[2]);
-		foreach ($param_split as $param) {
-			if (substr($param, 0, 4) == "xml=") {
-				$xmlfile = explode('=', $param);
-				$pagename = $xmlfile[1];
-			}
-		}
-	}
 }
 
 /* Using the derived page name, attempt to find in the URL mapping hash */

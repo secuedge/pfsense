@@ -56,105 +56,252 @@ if ($_REQUEST['widgetkey']) {
 	$widgetkey = $_REQUEST['widgetkey'];
 }
 
+function get_table_content($widgetkey) {
+	global $user_settings, $ifdescrs;
+	$output = "";
+	
+	$skipinterfaces = explode(",", $user_settings['widgets'][$widgetkey]['iffilter']);
+	$interface_is_displayed = false;
+	
+	foreach ($ifdescrs as $ifdescr => $ifname) {
+		if (in_array($ifdescr, $skipinterfaces)) {
+			continue;
+		}
+		
+		$interface_is_displayed = true;
+		$ifinfo = get_interface_info($ifdescr);
+		
+		// Determine interface type icon
+		if ($ifinfo['pppoelink'] || $ifinfo['pptplink'] || $ifinfo['l2tplink']) {
+			$typeicon = 'hdd-o';
+		} else if ($ifinfo['ppplink']) {
+			$typeicon = 'signal';
+		} else if (is_interface_wireless($ifdescr)) {
+			$typeicon = 'wifi';
+		} else {
+			$typeicon = 'sitemap';
+		}
+		
+		// Determine status icon and class
+		$status_class = '';
+		if ($ifinfo['status'] == "up" || $ifinfo['status'] == "associated") {
+			$icon = 'arrow-up';
+			$status_class = 'up';
+		} elseif ($ifinfo['status'] == "no carrier" || $ifinfo['status'] == "down") {
+			$icon = 'arrow-down';
+			$status_class = 'down';
+		} else {
+			$icon = 'question-circle';
+			$status_class = 'unknown';
+		}
+		
+		$output .= '<tr>';
+		
+		// Interface column
+		$output .= '<td>';
+		$output .= '<div class="interface-name">';
+		$output .= '<i class="fa fa-' . $typeicon . ' mr-2"></i>';
+		$output .= '<a href="/interfaces.php?if=' . $ifdescr . '">' . htmlspecialchars($ifname) . '</a>';
+		$output .= '</div>';
+		$output .= '<div class="interface-details">' . htmlspecialchars($ifinfo['macaddr']) . '</div>';
+		$output .= '</td>';
+		
+		// Status column
+		$output .= '<td>';
+		$output .= '<div class="interface-status ' . $status_class . '">';
+		$output .= '<i class="fa fa-' . $icon . '"></i>';
+		$output .= '<span>' . htmlspecialchars($ifinfo['status']) . '</span>';
+		$output .= '</div>';
+		$output .= '</td>';
+		
+		// Traffic/Details column
+		$output .= '<td>';
+		if ($ifinfo['pppoelink'] == "up" || $ifinfo['pptplink'] == "up" || $ifinfo['l2tplink'] == "up" || $ifinfo['ppplink'] == "up") {
+			$output .= '<div class="interface-details">' . sprintf(gettext("Uptime: %s"), htmlspecialchars($ifinfo['ppp_uptime'])) . '</div>';
+		} elseif (isset($ifinfo['laggproto'])) {
+			$output .= '<div class="interface-details">' . sprintf(gettext("LAGG Ports: %s"), htmlspecialchars(get_lagg_ports($ifinfo['laggport']))) . '</div>';
+		} else {
+			$output .= '<div class="interface-details">' . htmlspecialchars($ifinfo['media']) . '</div>';
+		}
+		
+		if (!empty($ifinfo['ipaddr']) || !empty($ifinfo['ipaddrv6'])) {
+			$output .= '<div class="interface-traffic">';
+			if (!empty($ifinfo['ipaddr'])) {
+				$output .= '<div class="traffic-in"><i class="fa fa-circle"></i><span class="traffic-value">' . htmlspecialchars($ifinfo['ipaddr']) . '</span></div>';
+			}
+			if (!empty($ifinfo['ipaddrv6'])) {
+				$output .= '<div class="traffic-out"><i class="fa fa-circle"></i><span class="traffic-value">' . htmlspecialchars($ifinfo['ipaddrv6']) . '</span></div>';
+			}
+			$output .= '</div>';
+		} else {
+			$output .= '<div class="interface-details">n/a</div>';
+		}
+		$output .= '</td>';
+		
+		$output .= '</tr>';
+	}
+	
+	if (!$interface_is_displayed) {
+		$output .= '<tr><td colspan="3" class="text-center">' . gettext('All interfaces are hidden.') . '</td></tr>';
+	}
+	
+	return $output;
+}
+
 ?>
 
-<div class="table-responsive" id="ifaces_status_<?=htmlspecialchars($widgetkey)?>">
-	<table class="table table-striped table-hover table-condensed">
-		<tbody>
-
-<?php
-$skipinterfaces = explode(",", $user_settings['widgets'][$widgetkey]['iffilter']);
-$widgetkey_nodash = str_replace("-", "", $widgetkey);
-$interface_is_displayed = false;
-
-foreach ($ifdescrs as $ifdescr => $ifname):
-	if (in_array($ifdescr, $skipinterfaces)) {
-		continue;
+<div class="table-responsive">
+	<style>
+	.interfaces-widget-card {
+		background: #fff;
+		border-radius: 8px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		padding: 1.5rem;
+		font-family: Inter, sans-serif;
+		font-size: 13px;
+		line-height: 20px;
 	}
 
-	$interface_is_displayed = true;
-	$ifinfo = get_interface_info($ifdescr);
-	if ($ifinfo['pppoelink'] || $ifinfo['pptplink'] || $ifinfo['l2tplink']) {
-		/* PPP link (non-cell) - looks like a modem */
-		$typeicon = 'hdd-o';
-	} else if ($ifinfo['ppplink']) {
-		/* PPP Link (usually cellular) */
-		$typeicon = 'signal';
-	} else if (is_interface_wireless($ifdescr)) {
-		/* Wi-Fi interface (hostap/client/etc) */
-		$typeicon = 'wifi';
-	} else {
-		/* Wired/other interface. */
-		$typeicon = 'sitemap';
+	.interfaces-table {
+		width: 100%;
+		border-collapse: separate;
+		border-spacing: 0;
 	}
 
-	$known_status = true;
-
-	// Choose an icon by interface status
-	if ($ifinfo['status'] == "up" || $ifinfo['status'] == "associated") {
-		$icon = 'arrow-up text-success';
-	} elseif ($ifinfo['status'] == "no carrier") {
-		$icon = 'times-circle text-danger';
-	} elseif ($ifinfo['status'] == "down") {
-		$icon = 'arrow-down text-danger';
-	} else {
-		$known_status = false;
+	.interfaces-table th {
+		text-align: left;
+		padding: 0.75rem;
+		border-bottom: 1px solid #e2e8f0;
+		font-weight: 500;
+		color: #4a5568;
+		font-size: 13px;
+		line-height: 20px;
+		background: #f5f8fa;
 	}
 
-?>
-	<tr>
-		<td title="<?=htmlspecialchars($ifinfo['if'])?> (<?=htmlspecialchars($ifinfo['macaddr'])?>)">
-			<i class="fa fa-<?=$typeicon?>"></i>
-			<a href="/interfaces.php?if=<?=$ifdescr?>">
-				<?=htmlspecialchars($ifname);?>
-			</a>
-		</td>
-		<td>
-			<?php if ($known_status):?>
-				<i class="fa fa-<?=$icon?>" title="<?=htmlspecialchars($ifinfo['status'])?>"></i>
-			<?php else: ?>
-				<?=htmlspecialchars($ifinfo['status'])?>
-			<?php endif; ?>
-		</td>
-		<td>
-			<?php if ($ifinfo['pppoelink'] == "up" || $ifinfo['pptplink'] == "up" || $ifinfo['l2tplink'] == "up" || $ifinfo['ppplink'] == "up"):?>
-				<?=sprintf(gettext("Uptime: %s"), htmlspecialchars($ifinfo['ppp_uptime']));?>
-			<?php elseif (isset($ifinfo['laggproto'])):?>
-				<?=sprintf(gettext("LAGG Ports: %s"), htmlspecialchars(get_lagg_ports($ifinfo['laggport'])));?>
-			<?php else: ?>
-				<?=htmlspecialchars($ifinfo['media']);?>
-			<?php endif; ?>
-		</td>
+	.interfaces-table td {
+		padding: 1rem 0.75rem;
+		border-bottom: 1px solid #e2e8f0;
+		vertical-align: top;
+		font-size: 13px;
+		line-height: 20px;
+	}
 
-		<td <?=($ifinfo['dhcplink'] ? ' title="via dhcp"':'')?>>
-			<?php if (empty($ifinfo['ipaddr']) && empty($ifinfo['ipaddrv6'])): ?>
-				n/a
-			<?php else: ?>
-				<?=htmlspecialchars($ifinfo['ipaddr'])?>
-<?php
-				if (($ifinfo['ipaddr'] != "") && ($ifinfo['ipaddrv6'] != "")) {
-					print('<br />');
-				}
-?>
-				<?=htmlspecialchars($ifinfo['ipaddrv6'])?>
-			<?php endif; ?>
-		</td>
-	</tr>
-<?php
-endforeach;
-if (!$interface_is_displayed):
-?>
-	<tr>
-		<td class="text-center">
-			<?=gettext('All interfaces are hidden.');?>
-		</td>
-	</tr>
+	.interfaces-table tr:last-child td {
+		border-bottom: none;
+	}
 
-<?php
-endif;
-?>
-		</tbody>
-	</table>
+	.interfaces-table tr:hover {
+		background-color: #f7fafc;
+	}
+
+	.interface-name {
+		font-weight: 500;
+		color: #2d3748;
+		display: flex;
+		align-items: center;
+		margin-bottom: 0.25rem;
+		font-size: 13px;
+		line-height: 20px;
+	}
+
+	.interface-name i {
+		margin-right: 0.5rem;
+		color: #4a5568;
+	}
+
+	.interface-name a {
+		color: #2d3748;
+		text-decoration: none;
+		font-weight: 500;
+	}
+
+	.interface-name a:hover {
+		color: #4299e1;
+	}
+
+	.interface-details {
+		font-size: 13px;
+		line-height: 20px;
+		color: #718096;
+	}
+
+	.interface-status {
+		display: flex;
+		align-items: center;
+		font-size: 13px;
+		line-height: 20px;
+		padding: 0.25rem 0.5rem;
+		border-radius: 4px;
+		width: fit-content;
+		font-weight: 500;
+	}
+
+	.interface-status i {
+		margin-right: 0.5rem;
+	}
+
+	.interface-status.up {
+		background-color: #C6F6D5;
+		color: #2F855A;
+	}
+
+	.interface-status.down {
+		background-color: #FED7D7;
+		color: #C53030;
+	}
+
+	.interface-status.unknown {
+		background-color: #EDF2F7;
+		color: #4A5568;
+	}
+
+	.interface-traffic {
+		margin-top: 0.5rem;
+	}
+
+	.traffic-in, .traffic-out {
+		display: flex;
+		align-items: center;
+		font-size: 13px;
+		line-height: 20px;
+		color: #4a5568;
+		margin-bottom: 0.25rem;
+	}
+
+	.traffic-in i, .traffic-out i {
+		font-size: 8px;
+		margin-right: 0.5rem;
+	}
+
+	.traffic-in i {
+		color: #48BB78;
+	}
+
+	.traffic-out i {
+		color: #4299E1;
+	}
+
+	.traffic-value {
+		font-family: "Inter Mono", monospace;
+		font-size: 13px;
+		line-height: 20px;
+	}
+	</style>
+	<div id="interfaces-<?=$widgetkey?>" class="interfaces-widget-card">
+		<table class="interfaces-table">
+			<thead>
+				<tr>
+					<th><?=gettext("Interface")?></th>
+					<th><?=gettext("Status")?></th>
+					<th><?=gettext("Details")?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?=get_table_content($widgetkey)?>
+			</tbody>
+		</table>
+	</div>
 </div>
 <!-- close the body we're wrapped in and add a configuration-panel -->
 </div><div id="<?=$widget_panel_footer_id?>" class="panel-footer collapse">
@@ -217,13 +364,13 @@ if ($_REQUEST['ajax']) {
 
 		// Callback function called by refresh system when data is retrieved
 		function interfaces_callback(s) {
-			$(<?=json_encode('#ifaces_status_' . $widgetkey)?>).html(s);
+			$(s).html(s);
 		}
 
 		// POST data to send via AJAX
 		var postdata = {
-			widgetkey :<?=json_encode($widgetkey)?>,
-			ajax: "ajax"
+			ajax: "ajax",
+			widgetkey: "<?=$widgetkey?>"
 		};
 
 		// Create an object defining the widget refresh AJAX call
@@ -232,7 +379,7 @@ if ($_REQUEST['ajax']) {
 		interfacesObject.url = "/widgets/widgets/interfaces.widget.php";
 		interfacesObject.callback = interfaces_callback;
 		interfacesObject.parms = postdata;
-		interfacesObject.freq = 1;
+		interfacesObject.freq = 60;
 
 		// Register the AJAX object
 		register_ajax(interfacesObject);

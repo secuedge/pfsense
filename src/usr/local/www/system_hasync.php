@@ -132,15 +132,15 @@ if ($input_errors) {
 
 $form = new Form;
 
-$section = new Form_Section('State Synchronization Settings (pfsync)');
+$section = new Form_Section('State Synchronization Settings ');
 
 $section->addInput(new Form_Checkbox(
 	'pfsyncenabled',
 	'Synchronize states',
-	'pfsync transfers state insertion, update, and deletion messages between firewalls.',
+	'transfers state insertion, update, and deletion messages between firewalls.',
 	($pconfig['pfsyncenabled'] === 'on'),
 	'on'
-))->setHelp('Each firewall sends these messages out via multicast on a specified interface, using the PFSYNC protocol (IP Protocol 240).' .
+))->setHelp('Each firewall sends these messages out via multicast on a specified interface, using the protocol (IP Protocol 240).' .
 			' It also listens on that interface for similar messages from other firewalls, and imports them into the local state table.%1$s' .
 			'This setting should be enabled on all members of a failover group.%1$s' .
 			'Clicking "Save" will force a configuration sync if it is enabled! (see Configuration Synchronization Settings below)', '<br />');
@@ -161,17 +161,17 @@ $section->addInput(new Form_Input(
 	'text',
 	$pconfig['pfhostid'],
 	['placeholder' => substr(system_get_uniqueid(), -8)]
-))->setHelp('Custom pf host identifier carried in state data to uniquely identify which host created a firewall state.%1$s' .
+))->setHelp('Custom host identifier carried in state data to uniquely identify which host created a firewall state.%1$s' .
 		'Must be a non-zero hexadecimal string 8 characters or less (e.g. 1, 2, ff01, abcdef01).%1$s' .
 		'Each node participating in state synchronization must have a different ID.', '<br />');
 
 $section->addInput(new Form_Input(
 	'pfsyncpeerip',
-	'pfsync Synchronize Peer IP',
+	'Synchronize Peer IP',
 	'text',
 	$pconfig['pfsyncpeerip'],
 	['placeholder' => 'IP Address']
-))->setHelp('Setting this option will force pfsync to synchronize its state table to this IP address. The default is directed multicast.');
+))->setHelp('Setting this option will force to synchronize its state table to this IP address. The default is directed multicast.');
 
 $form->add($section);
 

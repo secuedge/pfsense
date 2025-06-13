@@ -206,7 +206,6 @@ function save_setupwizard_config(
 	write_config("Configuration updated by setup wizard");
 	reload_all();
 	mwexec_bg("/etc/rc.update_bogons.sh now");
-	touch("{$g['cf_conf_path']}/copynotice_display");
 }
 
 function setorforget(&$node, $value) {

@@ -56,7 +56,9 @@ $logincssfile = "#770101";
 					<div class="row">
 						<div class="col-sm-4">
 							<div id="logodiv" style="text-align:center" class="nowarning">
-								<?php include("/usr/local/www/logo.svg"); ?>
+								<object data="/logo.svg" type="image/svg+xml" height="60" width="240" class="logo">
+									Security Gateway
+								</object>
 							</div>
 						</div>
 						<div class="col-sm-4 nowarning msgbox text-center text-danger">
@@ -90,11 +92,9 @@ $logincssfile = "#770101";
 				<div class="col-sm-2"></div>
 			</div>
 
-			<footer id="3">
-			<div id="footertext">
-					<p class="text-muted">
-						<?=print_credit()?>
-					</p>
+			<footer class="footer">
+				<div class="container">
+					<p class="copyright">© <?=date('Y')?>. All Rights reserved <span class="separator">|</span> Designed & Developed by SecuEdge</p>
 				</div>
 			</footer>
 		</div>
@@ -113,5 +113,9 @@ $logincssfile = "#770101";
 	<script src="/vendor/bootstrap/js/bootstrap.min.js?v=<?=filemtime('/usr/local/www/vendor/bootstrap/js/bootstrap.min.js')?>"></script>
 	<script src="/js/pfSense.js?v=<?=filemtime('/usr/local/www/js/pfSense.js')?>"></script>
 	<script src="/js/pfSenseHelpers.js?v=<?=filemtime('/usr/local/www/js/pfSenseHelpers.js')?>"></script>
+	<script src="/js/polyfills.js?v=<?=filemtime('/usr/local/www/js/polyfills.js')?>"></script>
+	<script src="/vendor/sortable/sortable.js?v=<?=filemtime('/usr/local/www/vendor/sortable/sortable.js')?>"></script>
+	<script type="text/javascript" src="/vendor/jquery-treegrid/js/jquery.treegrid.min.js?v=<?=filemtime('/usr/local/www/vendor/jquery-treegrid/js/jquery.treegrid.min.js')?>"></script>
+	<script type="text/javascript" src="/vendor/js-cookie/js.cookie.js?v=<?=filemtime('/usr/local/www/vendor/js-cookie/js.cookie.js')?>"></script>
 	</body>
 </html>

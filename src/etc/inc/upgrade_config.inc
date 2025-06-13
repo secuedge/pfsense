@@ -6786,6 +6786,8 @@ function upgrade_228_to_229() {
 }
 
 function upgrade_229_to_230() {
+	global $config;
+
 	/* The "target" GUI for outbound NAT rules now behaves similarly to other pages. */
 	$obn_rules = config_get_path('nat/outbound/rule', []);
 	foreach ($obn_rules as & $obent) {
