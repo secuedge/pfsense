@@ -112,48 +112,15 @@ class ContentFilterManager {
         }
 
         $categories = [
-            // Security
-            ['Malware', 'security', 'Malicious software and threats'],
-            ['Phishing', 'security', 'Phishing and fraud sites'],
-            ['Botnets', 'security', 'Botnet command and control'],
-            ['Spyware', 'security', 'Spyware and adware'],
-            // Adult & Inappropriate
-            ['Adult Content', 'adult', 'Pornography and adult material'],
-            ['Nudity', 'adult', 'Nudity and sexually explicit content'],
-            ['Sex Education', 'adult', 'Sex education and advice'],
-            ['Violence', 'violence', 'Violent or graphic content'],
-            ['Hate & Racism', 'violence', 'Hate speech and racism'],
-            // Social Media
-            ['Social Networks', 'social', 'Social networking platforms'],
-            ['Instant Messaging', 'social', 'Chat and instant messaging'],
-            ['Blogs & Forums', 'social', 'Blogs, forums, and message boards'],
-            // Productivity
-            ['Job Search', 'productivity', 'Job search and career sites'],
+            ['Security', 'security', 'Malware, phishing, and security threats'],
+            ['Adult Content', 'content', 'Adult and inappropriate content'],
+            ['Social Media', 'social', 'Social networking platforms'],
+            ['Gaming', 'productivity', 'Gaming and entertainment sites'],
             ['Shopping', 'productivity', 'Online shopping and e-commerce'],
-            ['Real Estate', 'productivity', 'Real estate listings'],
-            ['Travel', 'productivity', 'Travel and booking sites'],
-            ['News & Media', 'productivity', 'News, magazines, and media'],
-            ['Reference', 'productivity', 'Reference and research'],
-            // Entertainment
-            ['Streaming Media', 'entertainment', 'Video and music streaming'],
-            ['Games', 'entertainment', 'Online games and gaming portals'],
-            ['Gambling', 'entertainment', 'Online gambling and betting'],
-            ['Sports', 'entertainment', 'Sports and fantasy leagues'],
-            // IT & File Sharing
-            ['File Sharing', 'it', 'Peer-to-peer and file sharing'],
-            ['Webmail', 'it', 'Web-based email services'],
-            ['Cloud Storage', 'it', 'Cloud storage and backup'],
-            // Finance
-            ['Banking', 'finance', 'Online banking and financial services'],
-            ['Cryptocurrency', 'finance', 'Cryptocurrency and blockchain'],
-            // Drugs & Illegal
-            ['Drugs', 'illegal', 'Illegal drugs and substances'],
-            ['Weapons', 'illegal', 'Weapons and explosives'],
-            // Miscellaneous
-            ['Religion', 'misc', 'Religious content'],
-            ['Political', 'misc', 'Political organizations and news'],
-            ['Ads & Trackers', 'misc', 'Advertising and web trackers'],
-            ['Uncategorized', 'misc', 'Uncategorized or unknown sites'],
+            ['Streaming', 'productivity', 'Video and music streaming services'],
+            ['Gambling', 'substance', 'Online gambling and betting sites'],
+            ['Violence', 'violence', 'Violent or extremist content'],
+            ['Downloads', 'downloads', 'File sharing and download sites']
         ];
 
         $this->db->exec('BEGIN TRANSACTION');

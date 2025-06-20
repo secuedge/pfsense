@@ -419,21 +419,21 @@ if (ipsec_enabled()): ?>
 }
 </style>
 
-<div id="<?=htmlspecialchars($widgetkey)?>-ipsec-mainpanel" class="content">
+<div id="<?=htmlspecialchars($widgetkey_nodash)?>-overview" style="display: <?=$activetab == 'overview' ? 'block' : 'none'?>">
     <div class="ipsec-widget">
         <div class="ipsec-widget-header">
             <h3 class="ipsec-widget-title"><?=gettext("IPsec Status")?></h3>
         </div>
         <div class="table-responsive">
             <table class="ipsec-table" data-sortable>
-		<thead>
-		<tr>
+                <thead>
+                    <tr>
                         <th><?=gettext("Phase 1")?></th>
                         <th><?=gettext("Phase 2")?></th>
                         <th><?=gettext("Mobile")?></th>
-		</tr>
-		</thead>
-		<tbody>
+                    </tr>
+                </thead>
+                <tbody>
                     <?php
                     if (ipsec_enabled() && get_service_status(array('name' => 'ipsec'))) {
                         $cmap = ipsec_status();
@@ -475,26 +475,28 @@ if (ipsec_enabled()): ?>
                             </span>
                         </td>
                     </tr>
-		</tbody>
-	</table>
-</div>
+                </tbody>
+            </table>
+        </div>
+        </div>
     </div>
 
+<div id="<?=htmlspecialchars($widgetkey_nodash)?>-tunnel" style="display: <?=$activetab == 'tunnel' ? 'block' : 'none'?>">
     <div class="ipsec-widget">
         <div class="ipsec-widget-header">
             <h3 class="ipsec-widget-title"><?=gettext("Tunnels")?></h3>
         </div>
         <div class="table-responsive">
             <table class="ipsec-table" data-sortable>
-	<thead>
-	<tr>
+                <thead>
+                    <tr>
                         <th><?=gettext("Source")?></th>
                         <th><?=gettext("Destination")?></th>
                         <th><?=gettext("Description")?></th>
                         <th><?=gettext("Status")?></th>
-	</tr>
-	</thead>
-	<tbody>
+                    </tr>
+                </thead>
+                <tbody>
                     <?php
                     $gateways_status = return_gateways_status(true);
                     foreach ($cmap as $k => $tunnel):
@@ -600,25 +602,27 @@ if (ipsec_enabled()): ?>
                         }
                     endforeach;
                     ?>
-	</tbody>
-	</table>
+                </tbody>
+            </table>
         </div>
-</div>
+        </div>
+    </div>
 
+<div id="<?=htmlspecialchars($widgetkey_nodash)?>-mobile" style="display: <?=$activetab == 'mobile' ? 'block' : 'none'?>">
     <div class="ipsec-widget">
         <div class="ipsec-widget-header">
             <h3 class="ipsec-widget-title"><?=gettext("Mobile Users")?></h3>
         </div>
         <div class="table-responsive">
             <table class="ipsec-table" data-sortable>
-		<thead>
-		<tr>
+                <thead>
+                    <tr>
                         <th><?=gettext("ID")?></th>
                         <th><?=gettext("Host")?></th>
                         <th><?=gettext("Status")?></th>
-		</tr>
-		</thead>
-		<tbody>
+                    </tr>
+                </thead>
+                <tbody>
                     <?php
                     if (is_array($mobile['pool'])) {
                         $mucount = 0;
@@ -657,15 +661,15 @@ if (ipsec_enabled()): ?>
                     ?>
                     <tr>
                         <td colspan="3" class="ipsec-empty"><?=gettext("No mobile pools configured")?></td>
-			</tr>
+                    </tr>
                     <?php
                     }
                     ?>
                 </tbody>
-		</table>
+            </table>
         </div>
     </div>
-	</div>
+</div>
 
 <?php else: ?>
 	<div>

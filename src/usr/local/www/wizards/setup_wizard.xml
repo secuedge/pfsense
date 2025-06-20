@@ -3,36 +3,15 @@
 <totalsteps>10</totalsteps>
 <step>
 	<id>1</id>
-	<title>Welcome to SecuEdge</title>
+	<title>SecuEdge Setup</title>
 	<disableheader>true</disableheader>
 	<description>
 		<![CDATA[
-		<div class="welcome-screen">
-			<img src="/SecuEdge_Logo.png" alt="SecuEdge Logo" class="welcome-logo">
-			<h2>Welcome to SecuEdge</h2>
-			<p>Your trusted network security solution</p>
-			<div class="welcome-features">
-				<div class="feature">
-					<i class="fa fa-shield-alt"></i>
-					<h3>Advanced Security</h3>
-					<p>Enterprise-grade protection for your network</p>
-				</div>
-				<div class="feature">
-					<i class="fa fa-tachometer-alt"></i>
-					<h3>High Performance</h3>
-					<p>Optimized for maximum throughput</p>
-				</div>
-				<div class="feature">
-					<i class="fa fa-cogs"></i>
-					<h3>Easy Management</h3>
-					<p>Intuitive interface for all your needs</p>
-				</div>
-			</div>
-			<p>This wizard will guide you through the initial configuration of your SecuEdge system.</p>
+		<p><h4>Welcome to SecuEdge!</h4></p>
+		<p>This wizard will provide guidance through the initial configuration of SecuEdge.</p>
 		<p>The wizard may be stopped at any time by clicking the logo image at the top of the screen.</p>
 		<br />
-			<p><a href="https://www.secuedge.com/about" class="btn btn-primary" target="_blank">Learn more about SecuEdge</a></p>
-		</div>
+		<p><a href="https://secuedge.com/" class="btn btn-info" target="_blank">Learn more</a></p>
 		]]>
 	</description>
 	<fields>
@@ -48,35 +27,21 @@
 </step>
 <step>
 	<id>2</id>
-	<title>SecuEdge Support</title>
+	<title>SecuEdge® Global Support is available 24/7</title>
 	<disableheader>true</disableheader>
 	<description>
 	<![CDATA[
-		<div class="support-screen">
-			<h2>24/7 Global Support</h2>
-			<div class="support-features">
-				<div class="support-feature">
-					<i class="fa fa-clock"></i>
-					<h3>24/7 Availability</h3>
-					<p>Our support team is always ready, even on holidays.</p>
-				</div>
-				<div class="support-feature">
-					<i class="fa fa-globe"></i>
-					<h3>Global Reach</h3>
-					<p>With engineers across different time zones, no support request goes unanswered.</p>
-				</div>
-				<div class="support-feature">
-					<i class="fa fa-certificate"></i>
-					<h3>Expert Support</h3>
-					<p>Our engineers hold prestigious networking certifications and possess years of hands-on experience.</p>
-				</div>
-			</div>
-			<div class="support-plans">
-				<h3>Support Plans</h3>
-				<p>We offer several support subscription plans tailored to fit different environment sizes and requirements.</p>
-				<a href="https://www.secuedge.com/support" class="btn btn-info" target="_blank">View Support Plans</a>
-			</div>
-		</div>
+		<p>Our 24/7 worldwide team of support engineers are the most qualified to diagnose your issue and resolve it quickly, from branch office to enterprise — on premises to cloud.</p>
+		<p>We offer several support subscription plans tailored to fit different environment sizes and requirements. Many companies around the world choose Netgate support because:</p>
+		<p>
+		<ul>
+			<li> <strong>24/7 Availability</strong> – Our support team is always ready, even on holidays.</li>
+			<li> <strong>Global Reach</strong> – With engineers across different time zones, no support request goes unanswered.</li>
+			<li> <strong>Expertise You Can Rely On</strong> – Our engineers hold prestigious networking certifications and possess years of hands-on experience in cybersecurity and firewall solutions.</li>
+		</ul>
+		</p>
+		<br />
+		<p><a href="https://secuedge.com/" class="btn btn-info" target="_blank">Learn more</a></p>
     ]]>
   </description>
 	<fields>

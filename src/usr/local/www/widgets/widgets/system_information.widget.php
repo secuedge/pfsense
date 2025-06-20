@@ -177,15 +177,10 @@ function compact_uptime($uptime) {
 ?>
 <link rel="stylesheet" href="/vendor/font-awesome/css/all.min.css">
 <style>
+/* Remove custom card styling to inherit from dashboard-card */
 .sysinfo-compact-card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(25,118,210,0.07);
-    padding: 1.5rem 2rem 1.2rem 2rem;
-    margin-bottom: 1.5rem;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
+    /* Remove background, border-radius, box-shadow, padding, margin to inherit from parent */
+    margin-bottom: 0;
 }
 
 /* Typography updates for selected components */
@@ -249,7 +244,6 @@ function compact_uptime($uptime) {
     color: #333;
 }
 @media (max-width: 700px) {
-    .sysinfo-compact-card { padding: 1rem 0.5rem; }
     .sysinfo-kpis { gap: 1.2rem; }
     .sysinfo-table td.label { padding-right: 0.5rem; }
 }

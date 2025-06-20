@@ -25,95 +25,17 @@
  */
 
 $(function() {
-	// Initialize Select2 for multi-select elements
-	$('select[multiple]').select2({
-		theme: 'bootstrap',
-		width: '100%',
-		placeholder: 'Select options...',
-		allowClear: true
-	});
-
-	// Initialize Select2 for single-select elements
-	$('select:not([multiple])').select2({
-		theme: 'bootstrap',
-		width: '100%',
-		minimumResultsForSearch: 10
-	});
-
-	// Handle multi-select elements
-	$('select[multiple]').each(function() {
-		var select = $(this);
-		var container = $('<div class="checkbox-list"></div>');
-		var name = select.attr('name');
-		
-		// Hide the original select
-		select.hide();
-		
-		// Create checkboxes for each option
-		select.find('option').each(function() {
-			var option = $(this);
-			var value = option.val();
-			var label = option.text();
-			var checked = option.prop('selected') ? 'checked' : '';
-			
-			var checkbox = $('<div class="checkbox">' +
-				'<label>' +
-				'<input type="checkbox" name="' + name + '[]" value="' + value + '" ' + checked + '> ' +
-				label +
-				'</label>' +
-				'</div>');
-			
-			container.append(checkbox);
-		});
-		
-		// Insert the checkboxes after the select
-		select.after(container);
-		
-		// Add "Select All" checkbox
-		var selectAll = $('<div class="checkbox">' +
-			'<label>' +
-			'<input type="checkbox" class="select-all"> Select All' +
-			'</label>' +
-			'</div>');
-		
-		container.prepend(selectAll);
-		
-		// Handle "Select All" functionality
-		selectAll.find('input').on('change', function() {
-			var checked = $(this).prop('checked');
-			container.find('input[type="checkbox"]:not(.select-all)').prop('checked', checked);
-			updateSelectValues(select, container);
-		});
-		
-		// Update select values when checkboxes change
-		container.find('input[type="checkbox"]:not(.select-all)').on('change', function() {
-			updateSelectValues(select, container);
-			updateSelectAllState(container);
-		});
-	});
-
-	// Function to update the hidden select values
-	function updateSelectValues(select, container) {
-		var values = [];
-		container.find('input[type="checkbox"]:not(.select-all):checked').each(function() {
-			values.push($(this).val());
-		});
-		select.val(values);
-	}
-
-	// Function to update the "Select All" checkbox state
-	function updateSelectAllState(container) {
-		var allChecked = container.find('input[type="checkbox"]:not(.select-all):checked').length === 
-						container.find('input[type="checkbox"]:not(.select-all)').length;
-		container.find('.select-all').prop('checked', allChecked);
-	}
-
 	// Attach collapsable behaviour to select options
 	(function()
 	{
 		var selects = $('select[data-toggle="collapse"]');
 
 		selects.on('change', function(){
+			// Skip multiselect elements to prevent interference
+			if ($(this).prop('multiple')) {
+				return;
+			}
+			
 			var options = $(this).find('option');
 			var selectedValue = $(this).find(':selected').val();
 
@@ -388,6 +310,67 @@ $(function() {
 	// Run in-page defined events
 	while (func = window.events.shift())
 		func();
+		
+	// Initialize Select2 for all multiselect elements
+	$('select[multiple]').each(function() {
+		var $select = $(this);
+		
+		// Initialize Select2 with professional styling
+		$select.select2({
+			theme: 'bootstrap-5',
+			width: '100%',
+			placeholder: 'Select options...',
+			allowClear: true,
+			closeOnSelect: false,
+			templateResult: formatOption,
+			templateSelection: formatSelection,
+			language: {
+				noResults: function() {
+					return 'No options found';
+				},
+				searching: function() {
+					return 'Searching...';
+				}
+			}
+		});
+		
+		// Custom formatting for options
+		function formatOption(option) {
+			if (!option.id) {
+				return option.text;
+			}
+			
+			var $option = $(
+				'<span>' + option.text + '</span>'
+			);
+			
+			return $option;
+		}
+		
+		// Custom formatting for selected items
+		function formatSelection(option) {
+			return option.text;
+		}
+		
+		// Add custom class for styling
+		$select.next('.select2-container').addClass('select2-secuedge');
+	});
+	
+	// Initialize Select2 for single select elements (optional - for consistency)
+	$('select:not([multiple])').each(function() {
+		var $select = $(this);
+		
+		// Skip if already initialized or has specific classes to exclude
+		if ($select.hasClass('no-select2') || $select.data('select2')) {
+			return;
+		}
+		
+		$select.select2({
+			theme: 'bootstrap-5',
+			width: '100%',
+			minimumResultsForSearch: 10 // Show search box only if more than 10 options
+		});
+	});
 });
 
 // Implement data-toggle=disable

@@ -115,11 +115,6 @@ $shortcut_section = isset($shortcut_section) ? $shortcut_section : '';
 	<link rel="stylesheet" href="/vendor/jquery-treegrid/css/jquery.treegrid.css?v=<?=filemtime('/usr/local/www/vendor/jquery-treegrid/css/jquery.treegrid.css')?>">
 	<link rel="stylesheet" href="<?=$cssfile?>?v=<?=filemtime('/usr/local/www/' . $cssfile)?>" />
 	<link rel="stylesheet" href="/css/custom-theme.css?v=<?=filemtime('/usr/local/www/css/custom-theme.css')?>" />
-	<link href="/vendor/bootstrap/css/bootstrap.min.css?v=<?=filemtime('/usr/local/www/vendor/bootstrap/css/bootstrap.min.css')?>" rel="stylesheet">
-	<link href="/vendor/jquery-ui/jquery-ui-1.12.1.min.css?v=<?=filemtime('/usr/local/www/vendor/jquery-ui/jquery-ui-1.12.1.min.css')?>" rel="stylesheet">
-	<link href="/css/pfSense.css?v=<?=filemtime('/usr/local/www/css/pfSense.css')?>" rel="stylesheet">
-	<link href="/vendor/select2/css/select2.min.css?v=<?=filemtime('/usr/local/www/vendor/select2/css/select2.min.css')?>" rel="stylesheet">
-	<link href="/vendor/select2-bootstrap-theme/select2-bootstrap.min.css?v=<?=filemtime('/usr/local/www/vendor/select2-bootstrap-theme/select2-bootstrap.min.css')?>" rel="stylesheet">
 
 	<title><?=$tabtitle?></title>
 	<script type="text/javascript">

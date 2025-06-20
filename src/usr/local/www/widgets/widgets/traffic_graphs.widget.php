@@ -130,9 +130,7 @@ $tg_displayed_realifsarray = [];
 	.traffic-widget-chart, .d3-chart {
 		margin-bottom: 0.1rem !important;
 		padding: 0.5rem 0.5rem 0rem 0.5rem !important;
-		background: #fff;
-		border-radius: 10px;
-		box-shadow: 0 1px 6px rgba(25,118,210,0.06);
+		/* Remove background, border-radius, box-shadow to inherit from parent dashboard-card */
 		height: 140px;
 		display: flex;
 		align-items: flex-end;

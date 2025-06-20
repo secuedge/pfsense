@@ -69,7 +69,16 @@ function getSystemAdvancedFirewall($json = false) {
 	$pconfig['tcpfirsttimeout'] = config_get_path('system/tcpfirsttimeout');
 	$pconfig['tcpopeningtimeout'] = config_get_path('system/tcpopeningtimeout');
 	$pconfig['tcptsdifftimeout'] = config_get_path('system/tcptsdifftimeout');
+<<<<<<< Updated upstream
 	$pconfig['tftpinterface'] = explode(",", $config['system']['tftpinterface']);
+=======
+	$tftpinterface = config_get_path('system/tftpinterface');
+	if (!empty($tftpinterface)) {
+		$pconfig['tftpinterface'] = explode(",", $tftpinterface);
+	} else {
+		$pconfig['tftpinterface'] = array();
+	}
+>>>>>>> Stashed changes
 	$pconfig['udpfirsttimeout'] = config_get_path('system/udpfirsttimeout');
 	$pconfig['udpmultipletimeout'] = config_get_path('system/udpmultipletimeout');
 	$pconfig['udpsingletimeout'] = config_get_path('system/udpsingletimeout');

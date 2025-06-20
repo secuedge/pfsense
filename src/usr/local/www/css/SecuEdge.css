@@ -1,0 +1,466 @@
+/* Custom Theme CSS */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Fira+Code&display=swap');
+
+:root {
+    --primary-gradient-start: #007BFF;
+    --primary-gradient-end: #0033CC;
+    --secondary-color: #002B6B;
+    --accent-color: #FFFFFF;
+    --text-color: #000000;
+    --text-color-secondary: #444444;
+    --success-color: #28A745;
+    --warning-color: #FFA500;
+    --border-color: #ddd;
+    --secondary-bg: #ffffff;
+    --hover-bg: #f8f9fa;
+    --base-font-size: 14px;
+}
+
+/* Base Styles */
+body {
+    font-family: 'Inter', sans-serif;
+    font-size: var(--base-font-size);
+    color: var(--text-color);
+    background-color: #F5F5F5;
+    line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+code, pre {
+    font-family: 'Fira Code', monospace;
+}
+
+/* Form Controls - Consistent Styling */
+.form-control, input[type="text"], input[type="password"], input[type="email"], 
+input[type="number"], input[type="url"], textarea {
+    font-family: 'Inter', sans-serif !important;
+    font-size: var(--base-font-size) !important;
+    color: var(--text-color) !important;
+    background-color: var(--secondary-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.form-control:focus, input:focus, textarea:focus {
+    border-color: var(--primary-gradient-start) !important;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15) !important;
+    outline: none !important;
+}
+
+/* Select Elements - Perfect Match */
+select, select.form-control {
+    font-family: 'Inter', sans-serif !important;
+    font-size: var(--base-font-size) !important;
+    color: var(--text-color) !important;
+    background-color: var(--secondary-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+    padding-right: 2.5em !important;
+    height: 34px !important;
+    line-height: 1.42857143 !important;
+    vertical-align: middle !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    outline: none !important;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23666" height="16" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') !important;
+    background-repeat: no-repeat !important;
+    background-position: right 8px center !important;
+    background-size: 16px !important;
+    box-sizing: border-box !important;
+    display: inline-block !important;
+    width: auto !important;
+    min-width: 120px !important;
+}
+
+select:focus {
+    border-color: var(--primary-gradient-start) !important;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15) !important;
+}
+
+option {
+    font-family: 'Inter', sans-serif !important;
+    font-size: calc(var(--base-font-size) + 1px) !important;
+    color: var(--text-color) !important;
+    background: var(--secondary-bg) !important;
+    padding: 10px !important;
+    line-height: 1.5 !important;
+}
+
+/* Remove IE dropdown arrow */
+select::-ms-expand {
+    display: none;
+}
+
+/* Labels - Consistent Typography */
+label, .control-label {
+    font-family: 'Inter', sans-serif !important;
+    font-size: var(--base-font-size) !important;
+    font-weight: 500 !important;
+    color: var(--text-color) !important;
+    margin-bottom: 5px !important;
+}
+
+/* Navigation */
+.navbar-inverse {
+    background: linear-gradient(to right, var(--primary-gradient-start), var(--primary-gradient-end));
+    border: none;
+}
+
+.navbar-inverse .navbar-nav > li > a {
+    color: var(--accent-color);
+    border-bottom: 5px solid transparent;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: var(--base-font-size);
+}
+
+.navbar-inverse .navbar-nav > li > a:hover,
+.navbar-inverse .navbar-nav > li > a:focus {
+    color: var(--accent-color);
+    border-bottom: 5px solid var(--accent-color);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Panels */
+.panel {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+}
+
+.panel-default > .panel-heading {
+    background: var(--secondary-color);
+    color: var(--accent-color);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: calc(var(--base-font-size) + 2px);
+    border-radius: 6px 6px 0 0;
+}
+
+/* Buttons */
+.btn {
+    font-family: 'Inter', sans-serif !important;
+    font-size: var(--base-font-size) !important;
+    font-weight: 500 !important;
+    border-radius: 4px !important;
+    padding: 8px 16px !important;
+    transition: all 0.2s ease !important;
+}
+
+.btn-primary {
+    background: linear-gradient(to right, var(--primary-gradient-start), var(--primary-gradient-end)) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.btn-primary:hover {
+    background: var(--secondary-color) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-success {
+    background-color: var(--success-color) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.btn-success:hover {
+    background-color: #218838 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Alerts */
+.alert {
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: var(--base-font-size);
+}
+
+.alert-success {
+    background-color: var(--success-color);
+    color: var(--accent-color);
+    border: none;
+}
+
+.alert-warning {
+    background-color: var(--warning-color);
+    color: var(--text-color);
+    border: none;
+}
+
+/* Tables */
+.table {
+    font-family: 'Inter', sans-serif;
+    font-size: var(--base-font-size);
+}
+
+.table > thead > tr > th {
+    background: var(--secondary-color);
+    color: var(--accent-color);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: var(--base-font-size);
+}
+
+.table > tbody > tr > td {
+    font-size: var(--base-font-size);
+    vertical-align: middle;
+}
+
+/* Login Page Specific */
+.loginCont {
+    background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
+}
+
+form.login input[type="text"],
+form.login input[type="password"] {
+    font-family: 'Inter', sans-serif;
+    border-bottom: 2px solid var(--accent-color);
+}
+
+form.login input[type="submit"] {
+    background-color: var(--accent-color);
+    color: var(--primary-gradient-end);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+}
+
+form.login input[type="submit"]:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Footer */
+#footertext {
+    background-color: var(--secondary-color);
+    font-family: 'Inter', sans-serif;
+    font-size: var(--base-font-size);
+}
+
+/* Status Indicators */
+.text-success {
+    color: var(--success-color);
+}
+
+.text-warning {
+    color: var(--warning-color);
+}
+
+/* Links */
+a {
+    color: var(--primary-gradient-start);
+    font-size: var(--base-font-size);
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--secondary-color);
+    text-decoration: none;
+}
+
+/* Sidebar Styling */
+.sidebar-header {
+    padding: 20px;
+    background: linear-gradient(to bottom, #2d2d2d, #1a1a1a);
+    text-align: center;
+}
+
+.sidebar-header a.navbar-brand {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 12px;
+    justify-content: center;
+    width: 100%;
+}
+
+.sidebar-header .logo {
+    max-width: 40px;
+    height: 40px;
+    margin-bottom: 0;
+    display: inline-block;
+}
+
+.sidebar-header .logo-text {
+    color: #fff;
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    text-transform: none;
+    line-height: 1;
+    padding-bottom: 2px;
+}
+
+.sidebar {
+    background: #1a1a1a;
+    min-width: 250px;
+    max-width: 250px;
+    transition: all 0.3s;
+}
+
+.sidebar .nav-link {
+    color: #BDBDBD;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: var(--base-font-size);
+}
+
+.sidebar .nav-link:hover {
+    color: #fff;
+    background: #2d2d2d;
+}
+
+.sidebar .nav-link i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar .nav-link.active {
+    background: #1e3f75;
+    color: #ffffff;
+}
+
+.sidebar .submenu {
+    background: #2d2d2d;
+    padding-left: 0;
+}
+
+.sidebar .submenu .nav-link {
+    padding-left: 40px;
+}
+
+.sidebar-footer {
+    padding: 20px;
+    background: #2d2d2d;
+    text-align: center;
+}
+
+.sidebar-footer .nav-link {
+    color: #ffffff;
+    padding: 10px;
+    font-size: var(--base-font-size);
+}
+
+.sidebar-footer .nav-link:hover {
+    background: #34495e;
+}
+
+.sidebar-footer .badge {
+    margin-left: 5px;
+    background: #e74c3c;
+}
+
+/* Form Layout Consistency */
+.form-group {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    min-height: 50px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    flex: 0 0 200px;
+    text-align: right;
+    padding-right: 15px;
+    margin-bottom: 0;
+}
+
+.form-group .form-control,
+.form-group select,
+.form-group input[type="text"],
+.form-group input[type="password"],
+.form-group input[type="email"],
+.form-group input[type="number"],
+.form-group textarea {
+    flex: 1;
+    max-width: 300px;
+}
+
+/* Checkbox and Radio Button Alignment */
+.form-group input[type="checkbox"],
+.form-group input[type="radio"] {
+    margin-right: 8px;
+    margin-top: 0;
+    vertical-align: middle;
+}
+
+/* Help Text Positioning */
+.form-group .help-block {
+    margin-left: 215px;
+    margin-top: 5px;
+    font-size: calc(var(--base-font-size) - 1px);
+    color: var(--text-color-secondary);
+}
+
+/* Panel Form Styling */
+.panel-body .form-group {
+    padding: 10px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 0;
+}
+
+.panel-body .form-group:last-child {
+    border-bottom: none;
+}
+
+/* Breadcrumbs */
+.breadcrumb {
+    font-family: 'Inter', sans-serif;
+    font-size: var(--base-font-size);
+    background-color: transparent;
+    padding: 8px 0;
+}
+
+/* Help Text */
+.help-block, .form-text {
+    font-family: 'Inter', sans-serif;
+    font-size: calc(var(--base-font-size) - 1px);
+    color: var(--text-color-secondary);
+    margin-top: 5px;
+}
+
+/* Smooth Transitions */
+* {
+    transition: all 0.2s ease;
+}
+
+/* Focus States */
+*:focus {
+    outline: none;
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+    :root {
+        --base-font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --base-font-size: 12px;
+    }
+} 

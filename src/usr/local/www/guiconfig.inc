@@ -1225,10 +1225,4 @@ function system_has_php_errors() {
 
 date_default_timezone_set($timezone);
 
-$cssfiles = array(
-    "/css/pfSense.css",
-    "/css/custom-notifications.css",
-    "/css/wizard-styles.css"
-);
-
 ?>

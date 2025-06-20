@@ -38,9 +38,19 @@ class Form_Select extends Form_Input
 		if ($allowMultiple)
 			$this->_attributes['multiple'] = 'multiple';
 
-		// PATCH: Always cast value to array for multiselects
-		if ($allowMultiple && !is_array($value)) {
-			$value = ($value !== null && $value !== '') ? [$value] : [];
+		// Ensure multiselect values are always arrays
+		if ($allowMultiple) {
+			if (!is_array($value)) {
+				if ($value === null || $value === '') {
+					$value = array();
+				} else {
+					$value = array($value);
+				}
+			}
+			// Remove any empty string values from the array
+			$value = array_filter($value, function($v) {
+				return $v !== '' && $v !== null;
+			});
 		}
 
 		$this->_value = $value;
@@ -60,16 +70,8 @@ class Form_Select extends Form_Input
 			if ((gettype($value) == "integer") && (gettype($sval) == "string"))
 				$value = strval($value);
 
-			// Handle multiselect values properly
 			if (isset($this->_attributes['multiple'])) {
-				// Ensure $sval is always an array for multiselect
-				if (!is_array($sval)) {
-					$sval = array($sval);
-				}
-				// Convert all values to strings for comparison
-				$sval = array_map('strval', $sval);
-				$value = strval($value);
-				$selected = in_array($value, $sval, true);
+				$selected = in_array($value, (array)$sval);
 			} else {
 				$selected = ($sval == $value);
 			}
